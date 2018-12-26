@@ -13,17 +13,7 @@ Here it does what
 1. saves information that render in this window so that you can scroll and look back.
 2. do output similar to cout object and use any manipulator function within and variables.
 3. if overflow occurs words wrap up at the end and start from new line.
-4. a special filter is included so that if you wanna print something like :
-
- Name            : Nikhil Nayyar
- Address         : ?/??/? California, Bakers 
-                   street 11, ??                          /* this output looks so perfect right even after overflow*/
-                   ???? ????  ??? ?????                   /* this output looks so perfect right even after overflow*/
- Class           : ???? ???? 
-                   secondary ??? school                   /* this output looks so perfect right even after overflow*/
-
-Here the filter used was : and  []. I have made it simple if one wanna try. 
-
+4. a special filter is included: ':' and  '[]'.
 5. Last is input based functionality which is similar to GUI textbox you see. You can  supply fixed width input, automatic or an input with     validity check along with msgs to pop up if incorrect input (then reinput correctly).
 6. Scrollbars when necessary.
 7. Tab Switching support so that you can switch between multiple Scrolling input/output Windows or scrolling selection Menu Windows.
