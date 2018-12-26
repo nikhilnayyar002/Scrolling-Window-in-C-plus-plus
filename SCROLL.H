@@ -239,7 +239,7 @@ int swmain::in(char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char
 int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
  {
     if(swmain::buffer[0]) out();
-    char p,*str=0,*Line=0; int i=x,k=0,w=b.hst+b.hsz-x+1,o=0,t;
+    char p,*str=0; int i=x,k=0,w=b.hst+b.hsz-x+1,o=0,t;
     if(!b.isactive()) b.setactive(1);
     if(v==-1) w=0; else w=v?(v+1):w;
     if(w) {str=new char[w];}
@@ -258,7 +258,7 @@ int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=
 	     pos=pos->next;  --yt; refresh2(DOWN,yt);
 	     if(yt>y)_setcursortype(_NOCURSOR);
 	     else _setcursortype(_NORMALCURSOR);
-	     if(yt==y) {gotoxy(x,y);printf("%s",str+o);}
+	     if(yt==y && str) {gotoxy(x,y);printf("%s",str+o);}
 	   }
 	}
 	else if(yt==y && w) {
@@ -317,10 +317,6 @@ struct item {
 	line*pos; line*end; item*next; item*prev;
 	int (*cb)(int);  char p;
 	};
-class swbase {
-	public:
-	virtual swbase *tabswitch()=0;
-};
 
 class swselec: public swbase {
 	int count;
@@ -328,7 +324,7 @@ class swselec: public swbase {
 	item *istart,*iend,*icurr;
 	char exitch;
 	swbase *nxtwin;
-	void refresh();
+	void refresh(int);
 	void refresh2();
 	int newnode(char*);
 	box b;
@@ -420,11 +416,14 @@ void swselec::out(char*buffer,int (*callback)(int)=0) {
     }
    }
    t->end=end;
-   if(!istart->next) refresh();
+   if(!istart->next) refresh(0);
+   if(count>b.vsz)   refresh(1);
    newnode("");
 }
-void swselec::refresh() {
+void swselec::refresh(int g=0) {
 	line *temp=icurr->pos,*temp2=icurr->next->end; int i=0;
+	gotoxy(b.hst+b.hsz+1,b.vst-1); printf("%c",char(219));
+	if(g) {gotoxy(b.hst+b.hsz+1,b.vst+b.vsz); printf("%c",char(31));}
 	int x=b.hst,y=b.vst;
 	textbackground(RED);
 	while(temp!=temp2 && i<b.vsz) {
@@ -440,6 +439,10 @@ void swselec::refresh() {
 
 void swselec::refresh2() {
 	line *temp=pos, *temp2=icurr->pos, *temp3=icurr->end->next;
+	gotoxy(b.hst+b.hsz+1,b.vst-1);
+	if(icurr!=istart) printf("%c",char(30)); else printf("%c",char(219));
+	gotoxy(b.hst+b.hsz+1,b.vst+b.vsz);
+	if(icurr!=iend) printf("%c",char(31)); else printf("%c",char(219));
 	for(int j=0; j<b.vsz && temp; ++j) {
 	       gotoxy(b.hst,j+b.vst);
 	       if(temp==temp2 && temp2!=temp3)
