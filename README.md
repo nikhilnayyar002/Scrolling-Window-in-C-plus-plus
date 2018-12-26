@@ -6,7 +6,7 @@ This is a tweak something i wanted when i was in 12th standard.
 So developed this so that i can reshape my CBSE Library Database Project. Input/output window performs any input / output, and when screen goes small it becomes a scrolling window. The selection menu window provides a nice and clean way to produce a selection view.
 
 
-Scrolling input/output Window 
+#Scrolling input/output Window 
 
 The practical application of this thing i will show you in my Library Database management program in new post. 
 Here it does what
@@ -27,4 +27,8 @@ Here the filter used was : and  []. I have made it simple if one wanna try.
 5. Last is input based functionality which is similar to GUI textbox you see. You can  supply fixed width input, automatic or an input with     validity check along with msgs to pop up if incorrect input (then reinput correctly).
 6. Scrollbars when necessary.
 7. Tab Switching support so that you can switch between multiple Scrolling input/output Windows or scrolling selection Menu Windows.
-    You get an orange colored bordered layout whenever one window is active.
+   You get an orange colored bordered layout whenever one window is active.
+
+#Scrolling selection Menu Windows
+
+Offers item selection control. Shares some features of Scrolling input/output Window.
