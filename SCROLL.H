@@ -19,13 +19,14 @@ class box{
 	int y1, y2, x1, x2, active;
 	public:
 	int hsz, vsz, hst, vst;
-	box() { /*fixed=0;*/ active=0;}
-	box(int y11,int y22,int x11, int x22) {
-	dimen(y11,y22,x11,x22);    active=0;
+	char *title;
+	box() { active=0;}
+	~box() {delete[] title;}
+	box(int y11,int y22,int x11, int x22,char *t=0) {
+	dimen(y11,y22,x11,x22);    active=0;  settitle(t);
 	}
 	void drawver(int y1,int y2,int x1);
 	void drawhor(int y1,int x1,int x2, char p);
-       //	int isset() { if(fixed) return 1; else return 0;}
 	void draw() {
 		drawver(y1,y2,x1);
 		drawver(y1,y2,x2);
@@ -35,6 +36,7 @@ class box{
 	}
 	void setactive(int);
 	int isactive() { if(active) return 1; else return 0; }
+	void settitle(char*);
  };
 void box::setactive(int t) {
 	active=0;
@@ -43,24 +45,40 @@ void box::setactive(int t) {
 	drawhor(y1,x1,x2,'U');
 	drawhor(y2,x1,x2,'D');
 	textcolor(WHITE);
-}
+ }
 
 void box::dimen(int y11, int y22, int x11, int x22) {
-	//   if(!fixed)
 		hsz=x22-x11+1;
 		vsz=y22-y11+1;
 		vst=y11; hst=x11;
 		y1=y11-2; x1=x11-2; x2=x22+2; y2=y22+2;
-       //	fixed=1;
  }
-void box::drawver(int y1,int y2,int x1) {
+void box::settitle(char *t) {
 
-	while(++y1<y2) {gotoxy(x1,y1); cprintf("%c",char(219));}
+	if(t) {
+	 int g=strlen(t); int sz=(g>hsz?hsz:g);
+	 title=new char[sz+1];
+	 strncpy(title, t, sz);
+	 *(title+sz) = '\0';
+	 if(g>hsz) *(title+sz-2)=*(title+sz-1)='.';
+	}
+	else { delete[] title; title=0; }
+}
+void box::drawver(int y1,int y2,int x1) {
+	char t=219;
+	while(++y1<y2) {gotoxy(x1,y1); cprintf("%c",t);}
  }
 void box::drawhor(int y1,int x1,int x2,char p) {
-	gotoxy(x1,y1);
-	if(p=='D')  while(x1<=x2) { cprintf("%c",char(223)); ++x1;}
-	else    while(x1<=x2) { cprintf("%c",char(220)); ++x1;}
+	char t; gotoxy(x1,y1);
+	t=(p=='D')?223:220;
+
+	while(x1<=x2) {
+	 if(x1==hst)
+	  if(title && p!='D')
+	   {cprintf("%s",title);x1+=strlen(title);}
+	 cprintf("%c",t);
+	 ++x1;
+	}
  }
 class swbase {
 	public:
@@ -74,7 +92,7 @@ class swmain: public swbase {
 	swbase *nxtwin;
 	int he,cv;
 	void initialize() {
-	 b.draw(); start=0; reset(1);
+	 start=0; reset(1);
 	}
 	void refresh();
 	void refresh2(int,int);
@@ -82,8 +100,8 @@ class swmain: public swbase {
 	box b;
 	public:
 	ostrstream o;
-	swmain(int y1, int y2, int x1, int x2)
-	:b(y1,y2,x1,x2), o(buffer,502,ios::out) {initialize(); nxtwin=0;}
+	swmain(int y1, int y2, int x1, int x2, char *t=0)
+	:b(y1,y2,x1,x2,t), o(buffer,502,ios::out) {initialize(); nxtwin=0;}
 	~swmain() {reset(0);}
 	int in(int,char*,int (*)(char*),void (*)(char*),char*);
 	int in(char*,int (*)(char*),void (*)(char*),char*);
@@ -91,6 +109,7 @@ class swmain: public swbase {
 	void reset(int);
 	swbase *tabswitch();
 	void setnxtwin(swbase *ptr) { nxtwin=ptr; }
+	char *getbuf() { return buffer; }
        };
 char swmain::buffer[502];
 void swmain::reset(int t=1) {
@@ -239,7 +258,7 @@ int swmain::in(char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char
 int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
  {
     if(swmain::buffer[0]) out();
-    char p,*str=0; int i=x,k=0,w=b.hst+b.hsz-x+1,o=0,t;
+    char p,*str=0; int i=x,k=0,w=b.hst+b.hsz-x+1,o=0,t,err=0;
     if(!b.isactive()) b.setactive(1);
     if(v==-1) w=0; else w=v?(v+1):w;
     if(w) {str=new char[w];}
@@ -265,7 +284,20 @@ int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=
 	   if(p==13 && str[0]) {
 	     if(isvalid && !isvalid(str)) {
 	      if(sendmsg) sendmsg(msg?msg:"");
+	      if(!err) {
+	       textbackground(RED);
+	       gotoxy(x,y); for(t=x;t<b.hsz+b.hst-1;++t) cprintf(" ");
+	       gotoxy(x,y); printf("%s",str+o);
+	       textbackground(BLACK);
+	       err=1;
+	      }
 	      continue;
+	     }
+	     if(err) {
+	      textbackground(BLUE);
+	      gotoxy(x,y); for(t=x;t<b.hsz+b.hst-1;++t) cprintf(" ");
+	      gotoxy(x,y); printf("%s",str+o);
+	      textbackground(BLACK);
 	     }
 	     strcat(curr->buf,str+o); break;
 	   }
@@ -321,15 +353,16 @@ struct item {
 class swselec: public swbase {
 	int count;
 	line *start,*pos,*curr,*end;
-	item *istart,*iend,*icurr;
+	item *istart,*ipos,*iend,*icurr;
 	char exitch;
 	swbase *nxtwin;
 	void refresh(int);
-	void refresh2();
+	void refresh2(int);
 	int newnode(char*);
 	box b;
 	public:
-	swselec(int y1, int y2, int x1, int x2):b(y1,y2,x1,x2) {
+	swselec(int y1, int y2, int x1, int x2, char *t=0)
+	:b(y1,y2,x1,x2,t) {
 	 istart=0; start=0;   nxtwin=0; reset(1);
 	}
 	~swselec() {reset(0);}
@@ -388,8 +421,9 @@ void swselec::out(char*buffer,int (*callback)(int)=0) {
    t->pos=end;
    t->prev=t->next=0;
    t->cb=callback?callback:0;
-   if(!istart) {istart=iend=icurr=t;  t->p=1; }
+   if(!istart) {istart=iend=icurr=ipos=t;  t->p=1; }
    else { t->p=iend->p+1; iend->next=t; t->prev=iend; iend=t;}
+   if(count<=b.vsz) {gotoxy(x-1,y); printf("%c",'>');}
    while(*str) {
     p=0;
     gotoxy(x,y);
@@ -422,11 +456,10 @@ void swselec::out(char*buffer,int (*callback)(int)=0) {
 }
 void swselec::refresh(int g=0) {
 	line *temp=icurr->pos,*temp2=icurr->next->end; int i=0;
-	gotoxy(b.hst+b.hsz+1,b.vst-1); printf("%c",char(219));
 	if(g) {gotoxy(b.hst+b.hsz+1,b.vst+b.vsz); printf("%c",char(31));}
 	int x=b.hst,y=b.vst;
 	textbackground(RED);
-	while(temp!=temp2 && i<b.vsz) {
+	while(temp!=temp2 && i<b.vsz &&!g) {
 	       gotoxy(x,i+y);
 	       cprintf("%s",temp->buf);
 	       for(int l=strlen(temp->buf);l<b.hsz; ++l)
@@ -437,22 +470,37 @@ void swselec::refresh(int g=0) {
 	textbackground(BLACK);
  }
 
-void swselec::refresh2() {
+void swselec::refresh2(int g=0) {
 	line *temp=pos, *temp2=icurr->pos, *temp3=icurr->end->next;
+	item *temp4=ipos;  int j=b.vst,k=b.vst+b.vsz-1;
 	gotoxy(b.hst+b.hsz+1,b.vst-1);
 	if(icurr!=istart) printf("%c",char(30)); else printf("%c",char(219));
 	gotoxy(b.hst+b.hsz+1,b.vst+b.vsz);
 	if(icurr!=iend) printf("%c",char(31)); else printf("%c",char(219));
-	for(int j=0; j<b.vsz && temp; ++j) {
-	       gotoxy(b.hst,j+b.vst);
-	       if(temp==temp2 && temp2!=temp3)
+	if(g==UP) {
+	 temp=icurr->pos; j=temp->n-pos->n+b.vst;
+	 k=icurr->next->end->n-pos->n+b.vst;
+	 temp4=icurr;
+	}
+	else if(g==DOWN) {
+	 temp=icurr->prev->pos; j=temp->n-pos->n+b.vst;
+	 k=icurr->end->n-pos->n+b.vst;
+	 temp4=icurr->prev;
+	}
+	for(; j<=k && (temp || g==1); ++j) {
+	       gotoxy(b.hst,j);
+	       if(temp && temp==temp4->pos) {
+		printf("\b%c",'>');  temp4=temp4->next;
+	       }
+	       else printf("\b ");
+	       if(temp && temp==temp2 && temp2!=temp3)
 		 {textbackground(RED); temp2=temp2->next; }
 	       else
 		 textbackground(BLUE);
-	       cprintf("%s",temp->buf);
-	       for(int l=strlen(temp->buf);l<b.hsz; ++l)
+	       if(temp) cprintf("%s",temp->buf);
+		for(int l=strlen(temp->buf);l<b.hsz; ++l)
 	       cprintf(" ");
-	       temp=temp->next;
+	       if(temp) temp=temp->next;
 	}
 	textbackground(BLACK);
 }
@@ -468,21 +516,24 @@ swbase *swselec::tabswitch()
 	if(p==0) {
 	   p=getch();
 	   if(p==UP && icurr!=istart) {
-	     icurr=icurr->prev;
-	     if(icurr->pos->n < pos->n) pos=icurr->pos;
-	     refresh2();
+	     icurr=icurr->prev; t=UP;
+	     if(icurr->pos->n < pos->n) {pos=icurr->pos; ipos=icurr; t=0;}
+	     refresh2(t);
 	   }
 	   else if(p==DOWN && icurr->next) {
-	      icurr=icurr->next; i=pos->n + b.vsz -1;
-	      if(icurr->pos->n > i && (icurr->end->n - icurr->pos->n +1 >b.vsz))
-		pos=icurr->pos;
-	      else if(icurr->end->n > i) {
+	      icurr=icurr->next; i=pos->n + b.vsz -1;  t=DOWN;
+	      if(icurr->end->n > i) {
+	       t=0;
+	       if(icurr->end->n - icurr->pos->n +1 <=b.vsz) {
 		i=icurr->end->n - i;
-		while(i) {pos=pos->next; --i;}
+		while(i) {
+		 pos=pos->next; --i;
+		 if(pos->prev==ipos->pos) ipos=ipos->next;
+		}
+	       }
+	       else {pos=icurr->pos; ipos=icurr;}
 	      }
-	      if(icurr==iend && (icurr->end->n - icurr->pos->n +1 >b.vsz))
-		pos=icurr->pos;
-	      refresh2();
+	      refresh2(t);
 	   }
 	}
 	else if(p==13 || (p>'0'&&p<=iend->p+'0') || p==exitch) {
@@ -492,7 +543,7 @@ swbase *swselec::tabswitch()
 	 itemp=istart;
 	 if(p==13) itemp=icurr;
 	 else {  t='1'; while(t!=p) {itemp=itemp->next; ++t; } }
-	 if(itemp->cb) if(itemp->cb(itemp->p)) refresh2();
+	 if(itemp->cb) if(itemp->cb(itemp->p)) refresh2(1);
 	}
 	else if(p==9) {
 	 b.setactive(0);
