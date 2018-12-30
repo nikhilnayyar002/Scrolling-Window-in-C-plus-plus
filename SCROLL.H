@@ -84,16 +84,14 @@ class swbase {
 	public:
 	virtual swbase *tabswitch()=0;
 };
-
+struct svpt { int x; line*loc; svpt*next; svpt*prev;};
 class swmain: public swbase {
 	static char buffer[502];
 	int count, x, y, yt;
 	line *start,*end,*curr,*pos;
+	svpt *spstart,*spend;
 	swbase *nxtwin;
 	int he,cv;
-	void initialize() {
-	 start=0; reset(1);
-	}
 	void refresh();
 	void refresh2(int,int);
 	int newnode(char*);
@@ -101,7 +99,7 @@ class swmain: public swbase {
 	public:
 	ostrstream o;
 	swmain(int y1, int y2, int x1, int x2, char *t=0)
-	:b(y1,y2,x1,x2,t), o(buffer,502,ios::out) {initialize(); nxtwin=0;}
+	:b(y1,y2,x1,x2,t), o(buffer,502,ios::out) {start=0; reset(1); nxtwin=0;}
 	~swmain() {reset(0);}
 	int in(int,char*,int (*)(char*),void (*)(char*),char*);
 	int in(char*,int (*)(char*),void (*)(char*),char*);
@@ -118,10 +116,15 @@ void swmain::reset(int t=1) {
 	 delete[] temp->buf;
 	 delete temp;
 	}
+	while (spstart!=0) {
+	 svpt *temp=spstart; spstart=spstart->next;
+	 delete temp;
+	}
 	if(t) {
 	 b.draw();
 	 pos=0; count=0; x=b.hst; y=yt=b.vst;
 	 he=0; cv=b.vsz; buffer[0]=0; o.seekp(0);
+	 spstart=spend=0;
 	 start=new line;
 	 start->buf=new char[b.hsz+1];
 	 start->buf[0]=0;
@@ -150,7 +153,8 @@ int swmain::newnode(char *data)
 void swmain::out(int ln=0) {
    if(!start || !*buffer) return;
    o<<ends;
-   int k,flag,flag2,c,setpos=0,t=0;
+   if(y!=yt) refresh();
+   int k,flag,flag2,c,setpos=0,t=count>b.vsz?1:0;
    char *p=0,*str=buffer;
    while(*str) {
     if(setpos) {
@@ -194,7 +198,8 @@ void swmain::out(int ln=0) {
 }
 
 void swmain::refresh() {    //refresh the output from start
-    y=b.vst; line*temp=pos;
+    if(y!=yt) {pos=end; int k=b.vsz; while(--k) pos=pos->prev;}
+    line*temp=pos; y=b.vst;
     int i=y,x=b.hst; he=count-b.vsz; cv=b.vsz-he;
     gotoxy(b.hst+b.hsz+1,b.vst-1);
     if(pos!=start) printf("%c",char(30)); else printf("%c",char(219));
@@ -258,6 +263,7 @@ int swmain::in(char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char
 int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
  {
     if(swmain::buffer[0]) out();
+    if(y!=yt) refresh();
     char p,*str=0; int i=x,k=0,w=b.hst+b.hsz-x+1,o=0,t,err=0;
     if(!b.isactive()) b.setactive(1);
     if(v==-1) w=0; else w=v?(v+1):w;
