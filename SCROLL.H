@@ -4,6 +4,7 @@
 #include <strstream.h>
 #define  UP 72
 #define  DOWN  80
+#define to(x) (swbase**)(&x)
 
 void color(int x1,int y1,int x2,int y2, int cb=BLACK,int ct=WHITE)
  { textcolor(ct);
@@ -17,17 +18,23 @@ struct line {  char*buf; char n;  line*next; line*prev; };
 class box{
 	void dimen(int, int, int, int);
 	int y1, y2, x1, x2, active;
+	char *title, *buf;
 	public:
 	int hsz, vsz, hst, vst;
-	char *title;
-	box() { active=0;}
-	~box() {delete[] title;}
+	~box() {
+	 if(title) delete[] title;
+	 if(buf) {puttext(x1,y1,x2,y2,buf); delete[] buf;}
+	}
 	box(int y11,int y22,int x11, int x22,char *t=0) {
-	dimen(y11,y22,x11,x22);    active=0;  settitle(t);
+	dimen(y11,y22,x11,x22);   active=0; title=0; settitle(t);
 	}
 	void drawver(int y1,int y2,int x1);
 	void drawhor(int y1,int x1,int x2, char p);
-	void draw() {
+	void draw(int t=1) {
+		if(t) {
+		 buf=new char[(y2-y1+1)*(x2-x1+1)*2];
+		 gettext(x1,y1,x2,y2,buf);
+		}
 		drawver(y1,y2,x1);
 		drawver(y1,y2,x2);
 		drawhor(y1,x1,x2,'U');
@@ -37,6 +44,7 @@ class box{
 	void setactive(int);
 	int isactive() { if(active) return 1; else return 0; }
 	void settitle(char*);
+	char* gettitle() { return title; }
  };
 void box::setactive(int t) {
 	active=0;
@@ -81,50 +89,47 @@ void box::drawhor(int y1,int x1,int x2,char p) {
 	}
  }
 class swbase {
+	protected:
+	swbase **nxtwin; int count; box b;
+	line *start,*end,*curr,*pos;
+	virtual int newnode(char*)=0;
 	public:
+	swbase(int y1, int y2, int x1, int x2, char *t)
+	:b(y1,y2,x1,x2,t) { start=0; nxtwin=0;  }
 	virtual swbase *tabswitch()=0;
+	void setnxtwin(swbase **ptr) { nxtwin=ptr; }
 };
-struct svpt { int x; line*loc; svpt*next; svpt*prev;};
 class swmain: public swbase {
 	static char buffer[502];
-	int count, x, y, yt;
-	line *start,*end,*curr,*pos;
-	svpt *spstart,*spend;
-	swbase *nxtwin;
+	int x, y, yt;
 	int he,cv;
 	void refresh();
 	void refresh2(int,int);
 	int newnode(char*);
-	box b;
 	public:
 	ostrstream o;
 	swmain(int y1, int y2, int x1, int x2, char *t=0)
-	:b(y1,y2,x1,x2,t), o(buffer,502,ios::out) {start=0; reset(1); nxtwin=0;}
+	:swbase(y1,y2,x1,x2,t), o(buffer,502,ios::out){ reset(1);}
 	~swmain() {reset(0);}
 	int in(int,char*,int (*)(char*),void (*)(char*),char*);
 	int in(char*,int (*)(char*),void (*)(char*),char*);
 	void out(int);
 	void reset(int);
 	swbase *tabswitch();
-	void setnxtwin(swbase *ptr) { nxtwin=ptr; }
 	char *getbuf() { return buffer; }
        };
 char swmain::buffer[502];
 void swmain::reset(int t=1) {
+	int g=start?1:0;
 	while(start!=0) {
 	 line *temp=start; start=start->next;
 	 delete[] temp->buf;
 	 delete temp;
 	}
-	while (spstart!=0) {
-	 svpt *temp=spstart; spstart=spstart->next;
-	 delete temp;
-	}
 	if(t) {
-	 b.draw();
+	 if(g) b.draw(0); else b.draw();
 	 pos=0; count=0; x=b.hst; y=yt=b.vst;
 	 he=0; cv=b.vsz; buffer[0]=0; o.seekp(0);
-	 spstart=spend=0;
 	 start=new line;
 	 start->buf=new char[b.hsz+1];
 	 start->buf[0]=0;
@@ -308,6 +313,7 @@ int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=
 	     strcat(curr->buf,str+o); break;
 	   }
 	   else if(p==13) continue;
+	   else if(p==27) {*str=0; break;}
 	   else if(p!='\b'&&k<w-1 && p!='\t') {
 	     str[k++]=p;  str[k]='\0';
 	     if(i==b.hst+b.hsz) {
@@ -346,42 +352,33 @@ int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=
  }
 swbase *swmain::tabswitch() {
 		in(-1,0);
-		if(nxtwin) return nxtwin;
+		if(nxtwin) return *nxtwin;
 		else return 0;
 }
 //######################################
 
 struct item {
 	line*pos; line*end; item*next; item*prev;
-	int (*cb)(int);  char p;
+	void (*cb)(int);  char p;
 	};
 
 class swselec: public swbase {
-	int count;
-	line *start,*pos,*curr,*end;
 	item *istart,*ipos,*iend,*icurr;
-	char exitch;
-	swbase *nxtwin;
 	void refresh(int);
 	void refresh2(int);
 	int newnode(char*);
-	box b;
 	public:
 	swselec(int y1, int y2, int x1, int x2, char *t=0)
-	:b(y1,y2,x1,x2,t) {
-	 istart=0; start=0;   nxtwin=0; reset(1);
+	:swbase(y1,y2,x1,x2,t) {
+	 istart=0; reset(1);
 	}
 	~swselec() {reset(0);}
-	void exitctr(char c,char*str=0) {
-		exitch=c;
-		out(str?str:":Go Back:",0);
-	}
-	void out(char*,int (*)(int));
+	void out(char*,void (*)(int));
 	void reset(int);
 	virtual swbase *tabswitch();
-	void setnxtwin(swbase *ptr) { nxtwin=ptr; }
        };
 void swselec::reset(int t=1) {
+	int g=start?1:0;
 	while(start!=0) {
 	 line *temp=start; start=start->next;
 	 delete[] temp->buf;
@@ -393,7 +390,7 @@ void swselec::reset(int t=1) {
 	 delete temp2;
 	}
 	if(t) {
-	 b.draw();
+	 if(g) b.draw(0); else b.draw();
 	 pos=0; count=0; icurr=iend=0;
 	 start=new line;
 	 start->n=1;
@@ -419,7 +416,7 @@ int swselec::newnode(char *data)
   return 0;
  }
 
-void swselec::out(char*buffer,int (*callback)(int)=0) {
+void swselec::out(char*buffer,void (*callback)(int)=0) {
    if(!start || !*buffer) return;
    int k,flag,c,x=b.hst,y=end->n+b.vst-1;
    char *p=0,*str=buffer;
@@ -542,19 +539,20 @@ swbase *swselec::tabswitch()
 	      refresh2(t);
 	   }
 	}
-	else if(p==13 || (p>'0'&&p<=iend->p+'0') || p==exitch) {
+	else if(p==13 || (p>'0'&&p<=iend->p+'0') || p==27) {
 	 b.setactive(0);
 	 _setcursortype(_NORMALCURSOR);
-	 if(icurr==iend || p==exitch) return 0;
+	 if(p==27) return 0;
 	 itemp=istart;
 	 if(p==13) itemp=icurr;
 	 else {  t='1'; while(t!=p) {itemp=itemp->next; ++t; } }
-	 if(itemp->cb) if(itemp->cb(itemp->p)) refresh2(1);
+	 if(itemp->cb) itemp->cb(itemp->p);
+	 else return 0;
 	}
 	else if(p==9) {
 	 b.setactive(0);
 	 _setcursortype(_NORMALCURSOR);
-	 if(nxtwin) return nxtwin;
+	 if(nxtwin) return *nxtwin;
 	 else return 0;
 	}
     }
