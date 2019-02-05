@@ -23,4 +23,9 @@ Here it does what
 
 #Scrolling selection Menu Windows
 
-Offers item selection control. Shares some features of Scrolling input/output Window.
+Offers item selection control where each item is bounded to a function which ii triggers on selection through enter key or keycode. Shares some features of Scrolling input/output Window.
+
+
+#Note
+
+Sample programs are provided. You can see them and study. For Complete Documentation contact nikhilnayyar002@gmail.com by giving me a msg with subject 'ScrollingWindow'. I will help you out.
