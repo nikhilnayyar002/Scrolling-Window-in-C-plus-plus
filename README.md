@@ -15,9 +15,9 @@ It includes a two classes :
 <li>scrolling selection Menu Window</li>
 </ul>
 
-<h2>Why i developed this header file?</h2>
+<h2>Why i developed this file?</h2>
 
-This is a tweak something i wanted when i was in 12th standard when i was creating a Library Database Project in C++ using <b>Turbo C++ v 3.0</b>. 
+This is a tweak something i wanted when i was in 12th standard when i was creating a Library Database Project in C++ using <b>Turbo C++ v 3.0</b>. I wanted to present the database program in good manner.
 
 <h2>How easily i could use it?</h2>
 
