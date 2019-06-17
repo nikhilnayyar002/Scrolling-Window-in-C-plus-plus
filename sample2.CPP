@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<iomanip.h>
 #include<dos.h>
-#include "scroll2.cpp"
+#include "scroll.h"
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ global
 swselec *sw; swmain *mw, *msg;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ menu
