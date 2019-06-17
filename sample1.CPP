@@ -1,4 +1,4 @@
-#include "scroll2.cpp"
+#include "scroll.h"
 swselec *sw;
 swmain *sw1;
 swmain *sw2;
