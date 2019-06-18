@@ -3,8 +3,13 @@
 Must watch video first for good insight:
 <a href="https://youtu.be/AKy5GKpfbKc">Video Preview</a>
 
-In short there is a header file you can include in your program such as Database Management Program to have clear look and clean code. It follows C++ v 3.0 standard. You just have to include SCROLL.H in your program as:
+<h2>Problems with this project</h2>
 
+<b>The current programs and created inclusion file .h are tested in turbo C++ Borland IDE. There are also issue regarding deprecation of "strstream.h" in c++. If you are using turbo c++ borland compiler. You can go for this feature otherwise please dont waste your time.</b>
+
+<p>
+In short there is a header file you can include in your program such as Database Management Program to have clear look and clean code. It follows C++ v 3.0 standard. You just have to include SCROLL.H in your program as:
+</p>
 <pre>
 #include "scroll.h"
 </pre>
@@ -21,11 +26,11 @@ This is a tweak something i wanted when i was in 12th standard when i was creati
 
 <h2>How easily i could use it?</h2>
 
-I will give examples to understand how these two classes are useful. Use these examples as templates.
+Just go through sample1.cpp follow the instructions.
 
 <h2>Prerequisites</h2>
 
-Must have good knowledge of following c++ features:
+Must have good knowledge of following c++ features along with oops:
 <ul>
 <li>Pointers</li>
 </ul>
@@ -46,12 +51,11 @@ Must have good knowledge of following c++ features:
 <h3>What you can customize?</h3>
 Generally you don't need to customize anything. The visual effects are all fine. If you really need to change background colors or text color you can customize the scroll.h file. I have actually hard coded values.
 
-
 <h2>Scrolling selection Menu Windows</h2>
 
 Offers item selection control where each item is bounded to a function which it triggers on selection through enter key or keycode (I will explain you in example). It shares some features of Scrolling input/output Window.
 
-
+<h2></h2>
 
 <h2>Support</h2>
 
