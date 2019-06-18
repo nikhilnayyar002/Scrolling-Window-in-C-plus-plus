@@ -1,11 +1,15 @@
-#include<fstream.h>
-#include<stdlib.h>
-#include<iomanip.h>
-#include<dos.h>
-#include "scroll.h"
+
+
+//#include<fstream.h>
+//#include<stdlib.h>
+//#include<iomanip.h>
+//#include<dos.h>
+#include "scroll2.cpp"
+
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ global
 swselec *sw; swmain *mw, *msg;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ menu
+
 void myfavmsg(int t) {
 	msg->reset();
 	msg->o<<"Either press keys (1-"<<t<<") or roll UP/DOWN & ENTER.";
