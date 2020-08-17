@@ -18,7 +18,7 @@
 
 */
 
-#include "scroll2.cpp"
+#include "SCROLL.H"
 
 /*
 
