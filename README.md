@@ -1,7 +1,10 @@
 <h1>Scrolling-Window-in-C++ ( C++ v 3.0 supported)</h1>
 
 Must watch video first for good insight:
-<a href="https://youtu.be/AKy5GKpfbKc">Video Preview</a>
+[Video Preview](https://youtu.be/AKy5GKpfbKc)
+\
+For future support of C++ Current Standard read markdown file 
+[C++_CUR_STD_SUPPORT.md](./C++_CUR_STD_SUPPORT.md)
 
 <h2>Problems with this project</h2>
 
