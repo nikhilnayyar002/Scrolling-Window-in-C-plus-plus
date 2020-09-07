@@ -6,6 +6,8 @@ Must watch video first for good insight:
 For future support of C++ Current Standard read markdown file 
 [C++_CUR_STD_SUPPORT.md](./C++_CUR_STD_SUPPORT.md)
 
+[Summary](https://nikhilnayyar.web.app/projects#scrolling-window)
+
 <h2>Problems with this project</h2>
 
 <b>The current programs and created inclusion file .h are tested in turbo C++ Borland IDE. There are also issue regarding deprecation of "strstream.h" in c++. If you are using turbo c++ borland compiler. You can go for this feature otherwise please dont waste your time.</b>
