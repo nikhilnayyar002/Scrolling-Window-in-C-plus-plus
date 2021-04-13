@@ -230,9 +230,6 @@ namespace winConio
         temp.cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
         temp.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 
-        printf("columns: %d\n", temp.cols);
-        printf("rows: %d\n", temp.rows);
-
         return temp;
     }
 }

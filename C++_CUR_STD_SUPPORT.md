@@ -41,11 +41,17 @@ int main() {
 }
 ```
 
-Also we need to replace ``` <strstream.h> ``` by ``` <sstream> ``` i.e and use ``` istringstream, ostringstream, stringstream``` as neccessary.
+* Also we need to replace ``` <strstream.h> ``` by ``` <sstream> ``` i.e and use ``` istringstream, ostringstream, stringstream``` as neccessary.
 
-Also some of the ``` <conio.h> ``` functions like ``` getch() ``` can be replaced.
+* ``` <conio.h> ``` functions like ``` getch() ``` is still available on windows.
 * replacemnt for gettext : https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
+* Console events : https://docs.microsoft.com/en-us/windows/console/reading-input-buffer-events
 
 ## ```dev``` Folder
 
 This contains work for modern c++. Implementations are for windows os only.
+* get console rows and cols
+* set full screen windowed console
+* clearscreen
+* paint background
+* text capturing
