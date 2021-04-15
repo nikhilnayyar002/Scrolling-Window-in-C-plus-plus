@@ -1,13 +1,10 @@
+#pragma once
 /*******************************************************************************************************************************************
  * headers
  * *****************************************************************************************************************************************/
 #include <bits/stdc++.h>
 #include <windows.h>
-
-/*******************************************************************************************************************************************
- * macro
- * *****************************************************************************************************************************************/
-#define WINCONIO_FAILURE_MESSAGE(NAME, CODE) std::cout << NAME << " failed - (" << CODE << ")\n";
+#include "./utility.hpp"
 
 namespace winConio
 {
@@ -103,6 +100,12 @@ namespace winConio
         }
 
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+    }
+
+    // explicitly set the text color of console
+    void setTextColor(int color = WHITE)
+    {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
     }
 
     // Create a new console screen buffer
@@ -221,15 +224,22 @@ namespace winConio
         }
     };
 
-    ConsoleDimentions getConsoleDimentions()
+    // get the dimensions of console window given a ConsoleScreenBuffer
+    ConsoleDimentions getConsoleDimentions(HANDLE hout)
     {
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         ConsoleDimentions temp;
 
-        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+        GetConsoleScreenBufferInfo(hout, &csbi);
         temp.cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
         temp.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 
         return temp;
+    }
+
+    // get the dimensions of standard console window
+    ConsoleDimentions getStdConsoleDimentions()
+    {
+        return getConsoleDimentions(GetStdHandle(STD_OUTPUT_HANDLE));
     }
 }
