@@ -14,7 +14,9 @@ int main()
 
     box::Box b(0,0,20,20,"Window");
     b.setActiveState(true);
+    winConio::displayCursor(false);
 
     int a = getch();
+
     return 0;
 }

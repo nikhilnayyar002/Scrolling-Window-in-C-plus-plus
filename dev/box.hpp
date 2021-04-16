@@ -9,6 +9,15 @@
 #include "./conio.hpp"
 #include <stdexcept>
 
+// forward declaration to support in future scrollWin classes as friend classes to class Box
+// (in short) Support to declaration:  friend class scrollWin::X;
+namespace scrollWin
+{
+    class SwBase;
+    class SwMain;
+    class SwSelec;
+}
+
 namespace box
 {
     const short BOX_HOR_BORDER_DOWN = 223;
@@ -49,6 +58,10 @@ namespace box
         COORD getBottomRightInnerCoord();
         void setActiveState(bool);
         bool isactive() { return active; }
+
+        friend class scrollWin::SwBase;
+        friend class scrollWin::SwMain;
+        friend class scrollWin::SwSelec;
     };
 
     inline COORD Box::getTopLeftInnerCoord()
