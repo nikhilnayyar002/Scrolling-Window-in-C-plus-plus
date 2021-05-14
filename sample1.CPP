@@ -25,16 +25,16 @@
    Globally define the pointers for use in any part of program.
 
 */
-swselec *sw;
-swmain *sw1;
-swmain *sw2;
+Swselec *sw;
+Swmain *sw1;
+Swmain *sw2;
 
 /*
 
    We will use at as a buffer or memory for storing user input values.
 
 */
-char str[60]="bro jjjjjjjjjjjjjjj ttttttttttttt ttttttttt tt";
+char str[60] = "bro jjjjjjjjjjjjjjj ttttttttttttt ttttttttt tt";
 
 /*
 
@@ -42,13 +42,17 @@ char str[60]="bro jjjjjjjjjjjjjjj ttttttttttttt ttttttttt tt";
 
 */
 
-int isitvalid(char*p) {
-	switch(*p)
-		{ case 'M':
-		  case 'F':
-		  case 'G': return 1;
-		  default : return 0;
-		}
+int isitvalid(char *p)
+{
+   switch (*p)
+   {
+   case 'M':
+   case 'F':
+   case 'G':
+      return 1;
+   default:
+      return 0;
+   }
 }
 
 /*
@@ -58,8 +62,12 @@ int isitvalid(char*p) {
 
 */
 
-void showmsg(char*p) {sw2->reset(); sw2->o<<p; sw2->out(0);}
-
+void showmsg(const char *p)
+{
+   sw2->reset();
+   sw2->o << p;
+   sw2->out(0);
+}
 
 /*
 
@@ -67,10 +75,11 @@ void showmsg(char*p) {sw2->reset(); sw2->o<<p; sw2->out(0);}
 
 */
 
-void msg(int p) {
- sw2->reset();
- sw2->o<<"you choosed option: "<<p;
- sw2->out(0);
+void msg(int p)
+{
+   sw2->reset();
+   sw2->o << "you choosed option: " << p;
+   sw2->out(0);
 }
 
 /*
@@ -111,13 +120,12 @@ void msg(int p) {
 
 */
 
-
-
-void output(int t) {
-   sw1->o<<"Hi:"<<str<<'\n';
-   sw1->o<<"[]This:"<<str<<'\n';
-   sw1->o<<"[]this output breaks to next line since it overflowed.";
-   sw1->o<<"\n6666666666666666999999999999999";
+void output(int t)
+{
+   sw1->o << "Hi:" << str << '\n';
+   sw1->o << "[]This:" << str << '\n';
+   sw1->o << "[]this output breaks to next line since it overflowed.";
+   sw1->o << "\n6666666666666666999999999999999";
    sw1->out(1);
    sw1->tabswitch();
 }
@@ -131,8 +139,8 @@ void output(int t) {
    "in" funtion of scrolling I/O window is the input function. It can be used to input
    values for example here in console window. It has two overloads:  
 
-   @int swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
-   @int swmain::in(char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
+   @int Swmain::in(int v,char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
+   @int Swmain::in(char*buffer,int (*isvalid)(char*)=0,void (*sendmsg)(char*)=0,char*msg=0)
 
    
    you can call in function as follow:
@@ -171,7 +179,7 @@ void output(int t) {
    sw1->reset();
       It causes the output of window to reset. Means window is cleaned up.
 
-   @void swmain::out(int ln=0)
+   @void Swmain::out(int ln=0)
       Please call this function if you want the output recorded in "o" to actually output
       on window.  
          with argument value 1 if you want to output "o" and start succesive output to start
@@ -192,22 +200,23 @@ void output(int t) {
 
 */
 
-void input(int t) {
-   sw1->o<<"Enter any thing:";
+void input(int t)
+{
+   sw1->o << "Enter any thing:";
    sw1->in(str);
-   sw1->o<<"Enter any thing(max 30 char):";
-   sw1->in(30,str);
-   sw1->o<<"Enter gender(wanna try 'H'):";
-   sw1->in(1,str,isitvalid,showmsg,"Please enter correct gender (M,F or G)");
+   sw1->o << "Enter any thing(max 30 char):";
+   sw1->in(30, str);
+   sw1->o << "Enter gender(wanna try 'H'):";
+   sw1->in(1, str, isitvalid, showmsg, "Please enter correct gender (M,F or G)");
    sw1->tabswitch();
    sw1->reset();
-   sw1->o<<str;
+   sw1->o << str;
    sw1->out(1);
 }
 /*
 
 Here the out function sets the items in menu in order:
-   @void swselec::out(char*buffer,void (*callback)(int)=0)
+   @void Swselec::out(char*buffer,void (*callback)(int)=0)
 
       the first argument describes the item.
       the second argument is optional. It is callback function if passed will
@@ -224,11 +233,12 @@ Here the out function sets the items in menu in order:
 
 
 */
-void menu() {
-   sw->out("1. Do a simple output.",output);
+void menu()
+{
+   sw->out("1. Do a simple output.", output);
    sw->out("2. This is new line line since. xxx beats the rock you know");
-   sw->out("3. I am good try input here",input);
-   sw->out("4. Hey man see a msg",msg);
+   sw->out("3. I am good try input here", input);
+   sw->out("4. Hey man see a msg", msg);
    sw->out("5. Big daddy v gONna suck you up bro undertaker is around baby...");
    sw->out("6. Go Back");
 }
@@ -281,8 +291,12 @@ int main(void)
 
    */
 
+   winConio::clearScreen(hStdOut);
+   winConio::setFullScreen();
 
-   clrscr();
+   HANDLE hStdOut = winConio::getStdHandle();
+   setGlobals(hStdOut, winConio::getConsoleDimentions(hStdOut));
+
    /*
       Create 3 windows and return pointers to these windows
       using new operator:
@@ -295,27 +309,27 @@ int main(void)
 
       Constuctor available: 
 
-      @ swselec -> create scrolling selection menu window
-      @ swmain -> create scrolling input/output Window
+      @ Swselec -> create scrolling selection menu window
+      @ Swmain -> create scrolling input/output Window
 
       requires vertical ordinates (y1,y2), horizontal abscissa(x1,x2) and window_title
       and these parameters passed to the constructors as follows:
 
-      swbase(int y1, int y2, int x1, int x2, char *t=0) {
+      Swbase(int y1, int y2, int x1, int x2, char *t=0) {
          ..
       }
 
-      swbase is abstract base class of swselec and swmain.
+      Swbase is abstract base class of Swselec and Swmain.
    */
 
-   sw=new swselec(6,17,3,29,"Menu");	//y1,y2,x1,x2,window_title
-   sw1=new swmain(6,17,35,77,"Console");  //y1,y2,x1,x2,window_title
-   sw2=new swmain(22,23,3,77,"Message"); //y1,y2,x1,x2,window_title
+   sw = new Swselec(6, 17, 3, 29, "Menu");     //y1,y2,x1,x2,window_title
+   sw1 = new Swmain(6, 17, 35, 77, "Console"); //y1,y2,x1,x2,window_title
+   sw2 = new Swmain(22, 23, 3, 77, "Message"); //y1,y2,x1,x2,window_title
 
    /*
       Link these windows by calling method: 
    
-      @ void setnxtwin(swbase **ptr)
+      @ void setnxtwin(Swbase **ptr)
    
       Linkage is as follows:  sw->sw1, sw1->sw2, sw2->sw
       If current window is sw, then:
@@ -327,13 +341,13 @@ int main(void)
 
       "to" is macro and it simplies writing complex expression:
 
-      #define to(x) (swbase**)(&x)
+      #define TO(x) (Swbase**)(&x)
 
    */
 
-   sw->setnxtwin(to(sw1));
-   sw1->setnxtwin(to(sw2));
-   sw2->setnxtwin(to(sw));
+   sw->setnxtwin(TO(sw1));
+   sw1->setnxtwin(TO(sw2));
+   sw2->setnxtwin(TO(sw));
 
    /*
    
@@ -355,7 +369,7 @@ int main(void)
             instructions.
 
       -------------------------------------------------
-      @ virtual swbase *tabswitch()=0;
+      @ virtual Swbase *tabswitch()=0;
 
       This function set the current window for user input.
 
@@ -422,12 +436,13 @@ int main(void)
 
    */
 
-   swbase*b=sw;
+   Swbase *b = sw;
    menu();
-   while(b) { b=b->tabswitch(); }
+   while (b)
+   {
+      b = b->tabswitch();
+   }
    /*
-
-
 
    */
    sw->reset();
@@ -438,7 +453,6 @@ int main(void)
    */
    sw->out("You just reseted this shit.");
 
-
    getch();
 
    /*
@@ -446,6 +460,8 @@ int main(void)
       clean up the memory.
    
    */
-   delete sw; delete sw1; delete sw2;
+   delete sw;
+   delete sw1;
+   delete sw2;
    return 0;
 }

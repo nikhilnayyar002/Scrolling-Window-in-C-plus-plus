@@ -30,6 +30,7 @@ namespace box
         std::string title;
         bool active;
         int hSize, vSize;
+        HANDLE hOut;
 
         void setDimension(short x1, short y1, short x2, short y2);
         void setTitle(std::string title);
@@ -39,8 +40,8 @@ namespace box
         void draw();
 
     public:
-        Box(short x1, short y1, short x2, short y2, std::string title)
-            : active(false)
+        Box(short x1, short y1, short x2, short y2, std::string title, HANDLE hOut)
+            : active(false), hOut(hOut)
         {
             if (x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1)
             {
@@ -105,21 +106,21 @@ namespace box
         drawHor(y1, x1, x2, BOX_HOR_BORDER_UP);
         drawHor(y2, x1, x2, BOX_HOR_BORDER_DOWN);
 
-        winConio::paintBackground(x1 + 1, y1 + 1, x2 - 1, y2 - 1, winConio::BLUE);
+        winConio::paintBackground(x1 + 1, y1 + 1, x2 - 1, y2 - 1, winConio::BLUE, hOut);
     }
 
     void Box::drawVer(int y1, int y2, int x1)
     {
         while (++y1 < y2)
         {
-            winConio::gotoxy(x1, y1);
+            winConio::gotoxy(x1, y1, hOut);
             std::cout << char(BOX_VER_BORDER);
         }
     }
     void Box::drawHor(int y1, int x1, int x2, int p)
     {
         int width = x2 - x1 + 1;
-        winConio::gotoxy(x1, y1);
+        winConio::gotoxy(x1, y1, hOut);
 
         if (p == BOX_HOR_BORDER_DOWN)
         {
@@ -137,12 +138,12 @@ namespace box
     {
         active = state;
         if (state)
-            winConio::setTextColor(winConio::YELLOW);
+            winConio::setTextColor(winConio::YELLOW, hOut);
 
         drawVer(y1, y2, x1);
         drawHor(y1, x1, x2, BOX_HOR_BORDER_UP);
         drawHor(y2, x1, x2, BOX_HOR_BORDER_DOWN);
 
-        winConio::setTextColor(); //reset
+        winConio::setTextColor(winConio::WHITE, hOut);
     }
 }

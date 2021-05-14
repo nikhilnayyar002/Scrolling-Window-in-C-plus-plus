@@ -32,25 +32,31 @@ namespace winConio
         int cols;
     };
 
+    // get the standard (default handle when program runs) console buffer handle
+    HANDLE getStdHandle();
+
     // sets the console window to fullscreen windowed mode
     // alternative functionality :  https://docs.microsoft.com/en-us/windows/console/setconsoledisplaymode
     void setFullScreen();
 
     // clear the screen
     // https://www.cplusplus.com/articles/4z18T05o/
-    void clearScreen();
+    void clearScreen(HANDLE hOut);
 
     // go to position x,y in console
-    void gotoxy(short int x, short int y);
+    void gotoxy(short int x, short int y, HANDLE hOut);
 
     // paint rectangular background from x1,y1 -> x2,y2
-    void paintBackground(int x1, int y1, int x2, int y2, int color);
+    void paintBackground(int x1, int y1, int x2, int y2, short color, HANDLE hOut);
 
     // explicitly set the text color of console
-    void setTextColor(int color = WHITE);
+    void setTextColor(short color, HANDLE hOut);
 
-    // explicitly set the text color of console
-    void setTextAndBackgroundColor(int txtColor = WHITE, int bgColor = BLACK);
+    // explicitly set the background color of console
+    void setBackgroundColor(short bgColor, HANDLE hOut);
+
+    // explicitly set the text and background color of console
+    void setTextAndBackgroundColor(short txtColor, short bgColor, HANDLE hOut);
 
     // Create a new console screen buffer
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
@@ -58,15 +64,12 @@ namespace winConio
 
     // set a console screen buffer as active screen buffer
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
-    int setConsoleActiveScreenBuffer(HANDLE &hOut);
+    int setConsoleActiveScreenBuffer(HANDLE hOut);
 
     // get the dimensions of console window given a ConsoleScreenBuffer
-    ConsoleDimentions getConsoleDimentions(HANDLE hout);
+    ConsoleDimentions getConsoleDimentions(HANDLE hOut);
 
-    // get the dimensions of standard console window
-    ConsoleDimentions getStdConsoleDimentions();
-
-    void displayCursor(bool state = true);
+    void displayCursor(bool state, HANDLE hOut);
 
     // Class that provides getText and putText functions with shared variables/objects.
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
@@ -83,42 +86,53 @@ namespace winConio
         void setSrcRecAndBufSize(SHORT x1, SHORT y1, SHORT x2, SHORT y2);
 
     public:
-        ConsoleTextCapture(int cols, int rows);
+        ConsoleTextCapture(ConsoleDimentions cd);
         ~ConsoleTextCapture();
 
-        bool getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hout);
-        bool putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hout);
+        bool getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut);
+        bool putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut);
     };
 }
 
 //definations
 namespace winConio
 {
+    HANDLE getStdHandle()
+    {
+        const HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        if (hStdOut == INVALID_HANDLE_VALUE)
+        {
+            WINCONIO_FAILURE_MESSAGE("getStdHandle", GetLastError());
+            throw std::runtime_error("getStdHandle failed");
+        }
+
+        return hStdOut;
+    }
+
     void setFullScreen()
     {
         ShowWindow(GetConsoleWindow(), SW_MAXIMIZE);
     }
 
-    void clearScreen()
+    void clearScreen(HANDLE hOut)
     {
-        HANDLE hStdOut;
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         DWORD count;
         DWORD cellCount;
         COORD homeCoords = {0, 0};
 
-        hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (hStdOut == INVALID_HANDLE_VALUE)
+        if (hOut == INVALID_HANDLE_VALUE)
             return;
 
         /* Get the number of cells in the current buffer */
-        if (!GetConsoleScreenBufferInfo(hStdOut, &csbi))
+        if (!GetConsoleScreenBufferInfo(hOut, &csbi))
             return;
         cellCount = csbi.dwSize.X * csbi.dwSize.Y;
 
         /* Fill the entire buffer with spaces */
         if (!FillConsoleOutputCharacter(
-                hStdOut,
+                hOut,
                 (TCHAR)' ',
                 cellCount,
                 homeCoords,
@@ -127,7 +141,7 @@ namespace winConio
 
         /* Fill the entire buffer with the current colors and attributes */
         if (!FillConsoleOutputAttribute(
-                hStdOut,
+                hOut,
                 csbi.wAttributes,
                 cellCount,
                 homeCoords,
@@ -135,37 +149,46 @@ namespace winConio
             return;
 
         /* Move the cursor home */
-        SetConsoleCursorPosition(hStdOut, homeCoords);
+        SetConsoleCursorPosition(hOut, homeCoords);
     }
 
-    void gotoxy(short int x, short int y)
+    void gotoxy(short int x, short int y, HANDLE hOut)
     {
         COORD c = {x, y};
-        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+        SetConsoleCursorPosition(hOut, c);
     }
 
-    void paintBackground(int x1, int y1, int x2, int y2, int color)
+    void paintBackground(int x1, int y1, int x2, int y2, short color, HANDLE hOut)
     {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TOTAL_COLORS * color + WHITE);
+        SetConsoleTextAttribute(hOut, TOTAL_COLORS * color + WHITE);
 
         int width = x2 - x1 + 1;
         for (int i = y1; i <= y2; ++i)
         {
-            gotoxy(x1, i);
+            gotoxy(x1, i, hOut);
             std::cout << std::string(width, ' ');
         }
 
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+        SetConsoleTextAttribute(hOut, WHITE);
     }
 
-    void setTextColor(int color = WHITE)
+    void setTextColor(short color, HANDLE hOut)
     {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+        SetConsoleTextAttribute(hOut, color);
     }
 
-    void setTextAndBackgroundColor(int txtColor = WHITE, int bgColor = BLACK)
+    void setBackgroundColor(short bgColor, HANDLE hOut)
     {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TOTAL_COLORS * bgColor + txtColor);
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        const short PREV_TEXT_COLOR = csbi.wAttributes % TOTAL_COLORS;
+        SetConsoleTextAttribute(hOut, TOTAL_COLORS * bgColor + PREV_TEXT_COLOR);
+    }
+
+    void setTextAndBackgroundColor(short txtColor, short bgColor, HANDLE hOut)
+    {
+        SetConsoleTextAttribute(hOut, TOTAL_COLORS * bgColor + txtColor);
     }
 
     HANDLE createConsoleScreenBuffer()
@@ -189,7 +212,7 @@ namespace winConio
         return hNewScreenBuffer;
     }
 
-    int setConsoleActiveScreenBuffer(HANDLE &hOut)
+    int setConsoleActiveScreenBuffer(HANDLE hOut)
     {
         if (!SetConsoleActiveScreenBuffer(hOut))
         {
@@ -199,9 +222,9 @@ namespace winConio
         return 0;
     }
 
-    ConsoleTextCapture::ConsoleTextCapture(int cols, int rows)
+    ConsoleTextCapture::ConsoleTextCapture(ConsoleDimentions cd)
     {
-        chiBuffer = new CHAR_INFO[rows * cols];
+        chiBuffer = new CHAR_INFO[cd.rows * cd.cols];
 
         // The top left destination cell of the temporary buffer is
         // row 0, col 0.
@@ -212,7 +235,7 @@ namespace winConio
 
     ConsoleTextCapture::~ConsoleTextCapture()
     {
-        delete chiBuffer;
+        delete[] chiBuffer;
     }
 
     void ConsoleTextCapture::setSrcRecAndBufSize(SHORT x1, SHORT y1, SHORT x2, SHORT y2)
@@ -230,12 +253,12 @@ namespace winConio
         coordBufSize.X = x2 - x1 + 1;
     }
 
-    bool ConsoleTextCapture::getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hout)
+    bool ConsoleTextCapture::getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut)
     {
         setSrcRecAndBufSize(x1, y1, x2, y2);
 
         fSuccess = ReadConsoleOutput(
-            hout,          // screen buffer to read from
+            hOut,          // screen buffer to read from
             chiBuffer,     // buffer to copy into
             coordBufSize,  // col-row size of chiBuffer
             coordBufCoord, // top left dest. cell in chiBuffer
@@ -249,12 +272,12 @@ namespace winConio
         return true;
     }
 
-    bool ConsoleTextCapture::putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hout)
+    bool ConsoleTextCapture::putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut)
     {
         setSrcRecAndBufSize(x1, y1, x2, y2);
 
         fSuccess = WriteConsoleOutput(
-            hout,          // screen buffer to write to
+            hOut,          // screen buffer to write to
             chiBuffer,     // buffer to copy from
             coordBufSize,  // col-row size of chiBuffer
             coordBufCoord, // top left src cell in chiBuffer
@@ -268,30 +291,24 @@ namespace winConio
         return true;
     }
 
-    ConsoleDimentions getConsoleDimentions(HANDLE hout)
+    ConsoleDimentions getConsoleDimentions(HANDLE hOut)
     {
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         ConsoleDimentions temp;
 
-        GetConsoleScreenBufferInfo(hout, &csbi);
+        GetConsoleScreenBufferInfo(hOut, &csbi);
         temp.cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
         temp.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 
         return temp;
     }
 
-    ConsoleDimentions getStdConsoleDimentions()
-    {
-        return getConsoleDimentions(GetStdHandle(STD_OUTPUT_HANDLE));
-    }
-
-    void displayCursor(bool state = true)
+    void displayCursor(bool state, HANDLE hOut)
     {
         CONSOLE_CURSOR_INFO prev;
-        HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
-        GetConsoleCursorInfo(hStdOut, &prev);
+        GetConsoleCursorInfo(hOut, &prev);
         prev.bVisible = state;
-        SetConsoleCursorInfo(hStdOut, &prev);
+        SetConsoleCursorInfo(hOut, &prev);
     }
 }
