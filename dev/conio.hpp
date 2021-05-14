@@ -174,7 +174,11 @@ namespace winConio
 
     void setTextColor(short color, HANDLE hOut)
     {
-        SetConsoleTextAttribute(hOut, color);
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        const short PREV_BG_COLOR = csbi.wAttributes / TOTAL_COLORS;
+        SetConsoleTextAttribute(hOut, TOTAL_COLORS * PREV_BG_COLOR + color);
     }
 
     void setBackgroundColor(short bgColor, HANDLE hOut)
