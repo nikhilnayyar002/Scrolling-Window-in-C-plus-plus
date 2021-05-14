@@ -1,5 +1,10 @@
-<h1>Scrolling-Window-in-C++ ( C++ v 3.0 supported)</h1>
+<h1>Scrolling-Window-in-C++</h1>
 
+[![Generic badge](https://img.shields.io/badge/OS-Windows-blue.svg)](https://shields.io/)
+[![Generic badge](https://img.shields.io/badge/C++-Stable-green.svg)](https://shields.io/)
+[![Generic badge](https://img.shields.io/badge/Mingw-gcc-green.svg)](https://shields.io/)
+\
+\
 Must watch video first for good insight:
 [Video Preview](https://youtu.be/AKy5GKpfbKc)
 \
@@ -8,13 +13,10 @@ For future support of C++ Current Standard read markdown file
 
 [Summary](https://nikhilnayyar.web.app/projects#scrolling-window)
 
-<h2>Problems with this project</h2>
+<h2>Introduction</h2>
 
-<b>The current programs and created inclusion file .h are tested in turbo C++ Borland IDE. There are also issue regarding deprecation of "strstream.h" in c++. If you are using turbo c++ borland compiler. You can go for this feature otherwise please dont waste your time.</b>
+In short there is a header file you can include in your program such as Database Management Program to have clear look and clean code. You just have to include SCROLL.H in your program as:
 
-<p>
-In short there is a header file you can include in your program such as Database Management Program to have clear look and clean code. It follows C++ v 3.0 standard. You just have to include SCROLL.H in your program as:
-</p>
 <pre>
 #include "scroll.h"
 </pre>
