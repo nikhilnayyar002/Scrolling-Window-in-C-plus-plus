@@ -1,10 +1,8 @@
 #pragma once
-/*******************************************************************************************************************************************
- * headers
- * *****************************************************************************************************************************************/
+
 #include <bits/stdc++.h>
 #include <windows.h>
-#include "./utility.hpp"
+#include "utility.cpp"
 
 namespace winConio
 {
@@ -94,7 +92,8 @@ namespace winConio
     };
 }
 
-//definations
+// definations
+
 namespace winConio
 {
     HANDLE getStdHandle()

@@ -5,9 +5,8 @@
 #include <bits/stdc++.h>
 #include <windows.h>
 #include <conio.h>
-#include "./utility.hpp"
-#include "./conio.hpp"
 #include <stdexcept>
+#include "conio.cpp"
 
 // forward declaration to support in future scrollWin classes as friend classes to class Box
 // (in short) Support to declaration:  friend class scrollWin::X;

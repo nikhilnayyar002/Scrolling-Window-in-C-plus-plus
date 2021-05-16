@@ -1,8 +1,8 @@
 #include <bits/stdc++.h>
 #include <windows.h>
 #include <conio.h>
-#include "./conio.hpp"
-#include "./box.hpp"
+#include "./lib/conio.cpp"
+#include "./lib/box.cpp"
 
 using namespace std;
 

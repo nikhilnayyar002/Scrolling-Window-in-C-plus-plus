@@ -2,7 +2,7 @@
 #include <conio.h>
 #include <string.h>
 #include <strstream>
-#include "./dev/conio.hpp"
+#include "./dev/lib/conio.cpp"
 
 #define UP 72
 #define DOWN 80
