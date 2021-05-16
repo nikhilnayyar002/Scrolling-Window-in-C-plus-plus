@@ -14,7 +14,7 @@ int main()
     winConio::setFullScreen();
     // winConio::ConsoleDimentions consoleDimens= winConio::getConsoleDimentions(hStdOut);
 
-    box::Box box(0, 0, 9, 9, "Window", winConio::BLUE, winConio::WHITE, hStdOut);
+    box::Box box(0, 0, 15, 15, "Window", winConio::BLUE, winConio::WHITE, hStdOut);
     box.setFocus(true);
     winConio::displayCursor(false, hStdOut);
 

@@ -19,11 +19,47 @@ namespace scrollWin
 
 namespace box
 {
-    const short BOX_HOR_BORDER_DOWN = 223;
-    const short BOX_HOR_BORDER_UP = 220;
-    const short BOX_VER_BORDER = 219;
+    enum BorderChars
+    {
+        horizontalBottom = 223,
+        horizontalTop = 220,
+        vertical = 219
+    };
 
-    const short BOX_HIGHLIGHTED_COLOR = winConio::YELLOW;
+    enum ScrollBarChars
+    {
+        scrollBar = 177,
+        scrollBarThumb = 178,
+        scrollButtonTop = 30,
+        scrollButtonDown = 31,
+    };
+
+    enum Position
+    {
+        top = 1,
+        bottom = 2,
+        left = 3,
+        right = 4
+    };
+
+    const short BOX_BORDER_HIGHLIGHTED_COLOR = winConio::YELLOW;
+
+    // padding inside box (>=0)
+    //
+    // 1. padding = 0
+    // 000000000000
+    // 0nik       0
+    // 0          0
+    // 0          0
+    // 000000000000
+    //
+    // 2. padding = 1
+    // 000000000000
+    // 0          0
+    // 0  nik     0
+    // 0          0
+    // 000000000000
+    const short BOX_INNER_PADDING = 1;
 
     // let offset character be #
     // let border character by 0
@@ -69,10 +105,8 @@ namespace box
         // original title of the box
         std::string title;
 
-        // backgound and text color
-        short bgColor, txtColor;
-
         // outer (boundary) parameters
+
         short y1, y2, x1, x2;
         int horSize, verSize;
 
@@ -80,8 +114,23 @@ namespace box
         bool _hasFocus;
 
         // inner box output region parameters
+
+        short bgColor, txtColor;
         int innerHorSize, innerVerSize;
         COORD innerTopLeftCoord, innerBottomRightCoord;
+
+        // inner box output region parameters (with padding)
+
+        int innerHorSizePadded, innerVerSizePadded;
+        COORD innerTopLeftCoordPadded, innerBottomRightCoordPadded;
+
+        // default box border colors
+
+        short borderTxtColor = winConio::WHITE;
+        short borderBgColor = winConio::BLACK;
+
+        // scrollbar
+        short scrollThumbWidth, scrollThumbPos;
 
         // extra data members
 
@@ -89,32 +138,19 @@ namespace box
         short actualOffsetLengthBeforeRenderedTitle;
 
         // initialize box data members
+
         void setDimension(short x1, short y1, short x2, short y2);
         void setRenderedTitle();
 
-        // draw methods
-        void drawVer(int y1, int y2, int x1);
-        void drawHor(int y1, int x1, int x2, int p);
-        void draw();
+        // render methods
+
+        void renderVerBorder(Position pc);
+        void renderHorBorder(BorderChars bc);
+        void renderBorders(int borderTxtColor, int borderBgColor);
+        void resetOutput();
 
     public:
-        Box(short x1, short y1, short x2, short y2, std::string title, short bgColor, short txtColor, HANDLE hOut)
-            : _hasFocus(false), hOut(hOut), bgColor(bgColor), txtColor(txtColor), title(title)
-        {
-            if (!(bgColor >= 0 && bgColor < winConio::TOTAL_COLORS))
-                throw std::runtime_error("Box::bgColor is not valid.");
-
-            if (!(txtColor >= 0 && txtColor < winConio::TOTAL_COLORS))
-                throw std::runtime_error("Box::txtColor is not valid.");
-
-            // check for dimensions inconsistencies
-            if (!(x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1))
-                throw std::runtime_error("Box dimensions are not correct. Make sure x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1.");
-
-            setDimension(x1, y1, x2, y2);
-            setRenderedTitle();
-            draw();
-        }
+        Box(short x1, short y1, short x2, short y2, std::string title, short bgColor, short txtColor, HANDLE hOut);
 
         // methods to get inner box parameters
 
@@ -125,6 +161,7 @@ namespace box
         COORD getInnerBottomRightCoord() { return innerBottomRightCoord; }
 
         // focus methods
+
         void setFocus(bool);
         bool hasFocus() { return _hasFocus; }
 
@@ -134,6 +171,25 @@ namespace box
         friend class scrollWin::SwMain;
         friend class scrollWin::SwSelec;
     };
+
+    Box::Box(short x1, short y1, short x2, short y2, std::string title, short bgColor, short txtColor, HANDLE hOut)
+        : _hasFocus(false), hOut(hOut), bgColor(bgColor), txtColor(txtColor), title(title)
+    {
+        // if (!(bgColor >= 0 && bgColor < winConio::TOTAL_COLORS))
+        //     throw std::runtime_error("Box::bgColor is not valid.");
+
+        // if (!(txtColor >= 0 && txtColor < winConio::TOTAL_COLORS))
+        //     throw std::runtime_error("Box::txtColor is not valid.");
+
+        // check for dimensions inconsistencies
+        if (!(x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1))
+            throw std::runtime_error("Box dimensions are not correct. Make sure x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1.");
+
+        setDimension(x1, y1, x2, y2);
+        setRenderedTitle();
+        renderBorders(borderTxtColor, borderBgColor);
+        resetOutput();
+    }
 
     // initialize box data members ********************************************************************
 
@@ -170,41 +226,73 @@ namespace box
 
         innerHorSize = x2 - x1 - 1;
         innerVerSize = y2 - y1 - 1;
-
         innerTopLeftCoord = {short(x1 + 1), short(y1 + 1)};
         innerBottomRightCoord = {short(x2 - 1), short(y2 - 1)};
+
+        innerHorSizePadded = innerHorSize - BOX_INNER_PADDING * 2;
+        innerHorSizePadded = innerVerSize - BOX_INNER_PADDING * 2;
+        innerTopLeftCoordPadded = {short(innerTopLeftCoord.X + BOX_INNER_PADDING), short(innerTopLeftCoord.Y + BOX_INNER_PADDING)};
+        innerBottomRightCoordPadded = {short(innerBottomRightCoord.X - BOX_INNER_PADDING), short(innerBottomRightCoord.Y - BOX_INNER_PADDING)};
 
         if (BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE > innerHorSize)
             actualOffsetLengthBeforeRenderedTitle = innerHorSize;
         else
             actualOffsetLengthBeforeRenderedTitle = BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE;
+
+        scrollThumbWidth = 2;
+        scrollThumbPos = 3;
     }
 
-    // draw methods ********************************************************************
-
-    void Box::draw()
+    // render methods ********************************************************************
+    void Box::resetOutput()
     {
-        drawVer(y1, y2, x1);
-        drawVer(y1, y2, x2);
-        drawHor(y1, x1, x2, BOX_HOR_BORDER_UP);
-        drawHor(y2, x1, x2, BOX_HOR_BORDER_DOWN);
-
-        winConio::paintBackground(x1 + 1, y1 + 1, x2 - 1, y2 - 1, bgColor, hOut);
+        winConio::paintBackground(innerTopLeftCoord.X, innerTopLeftCoord.Y, innerBottomRightCoord.X, innerBottomRightCoord.Y, bgColor, hOut);
     }
-    void Box::drawVer(int y1, int y2, int x1)
+    void Box::renderBorders(int borderTxtColor, int borderBgColor)
     {
-        while (++y1 < y2)
+        winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
+        renderVerBorder(Position::left);
+        renderVerBorder(Position::right);
+        renderHorBorder(BorderChars::horizontalTop);
+        renderHorBorder(BorderChars::horizontalBottom);
+    }
+    void Box::renderVerBorder(Position pc)
+    {
+        const short x = pc == Position::left ? x1 : x2;
+        short y = y1;
+        const unsigned char borderChar = BorderChars::vertical;
+
+        if (pc == Position::right && true)
         {
-            winConio::gotoxy(x1, y1, hOut);
-            std::cout << char(BOX_VER_BORDER);
-        }
-    }
-    void Box::drawHor(int y1, int x1, int x2, int p)
-    {
-        winConio::gotoxy(x1, y1, hOut);
+            //  create vertical scroll output string
+            std::string temp(1, ScrollBarChars::scrollButtonTop);
+            temp += std::string(scrollThumbPos, ScrollBarChars::scrollBar);
+            temp += std::string(scrollThumbWidth, ScrollBarChars::scrollBarThumb);
+            temp += std::string(innerVerSize - temp.length() - 1, ScrollBarChars::scrollBar);
+            temp += std::string(1, ScrollBarChars::scrollButtonDown);
 
-        if (p == BOX_HOR_BORDER_DOWN)
-            std::cout << std::string(horSize, BOX_HOR_BORDER_DOWN);
+            int i = 0;
+            while (++y < y2)
+            {
+                winConio::gotoxy(x, y, hOut);
+                std::cout << temp[i];
+                ++i;
+            }
+        }
+        else
+            while (++y < y2)
+            {
+                winConio::gotoxy(x, y, hOut);
+                std::cout << borderChar;
+            }
+    }
+    void Box::renderHorBorder(BorderChars bc)
+    {
+        winConio::gotoxy(x1, bc == BorderChars::horizontalTop ? y1 : y2, hOut);
+        const unsigned char borderChar = bc;
+
+        if (bc == BorderChars::horizontalBottom)
+            std::cout << std::string(horSize, borderChar);
         else
         {
             // let offset character be #
@@ -215,32 +303,26 @@ namespace box
             // 000000000000
 
             // before rendered title
-            std::string temp(1 + actualOffsetLengthBeforeRenderedTitle, BOX_HOR_BORDER_UP);
+            std::string temp(1 + actualOffsetLengthBeforeRenderedTitle, borderChar);
             // rendered title
             temp += renderedTitle;
             // after rendered title
-            temp += std::string(horSize - temp.length(), BOX_HOR_BORDER_UP);
+            temp += std::string(horSize - temp.length(), borderChar);
 
             // display whole horizontal border with rendered title
             std::cout << temp;
         }
     }
-
     // ********************************************************************
 
     void Box::setFocus(bool state = false)
     {
         _hasFocus = state;
 
-        // focus the box
         if (state)
-            // this will make the border color highlighted to illustrate that the box is in focus
-            winConio::setTextColor(BOX_HIGHLIGHTED_COLOR, hOut);
-
-        drawVer(y1, y2, x1);
-        drawHor(y1, x1, x2, BOX_HOR_BORDER_UP);
-        drawHor(y2, x1, x2, BOX_HOR_BORDER_DOWN);
-
-        winConio::setTextColor(txtColor, hOut); // reset to default text color after painting the border
+            // focus the box
+            renderBorders(BOX_BORDER_HIGHLIGHTED_COLOR, borderBgColor);
+        else
+            renderBorders(borderTxtColor, borderBgColor);
     }
 }

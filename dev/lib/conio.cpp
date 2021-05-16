@@ -44,10 +44,10 @@ namespace winConio
     // go to position x,y in console
     void gotoxy(short int x, short int y, HANDLE hOut);
 
-    // paint rectangular background from x1,y1 -> x2,y2
+    // paint rectangular background from x1,y1 -> x2,y2. After paiting it resets the backgorund and text color to previous value
     void paintBackground(int x1, int y1, int x2, int y2, short color, HANDLE hOut);
 
-    // explicitly set the text color of console
+    // explicitly set the text color of console.
     void setTextColor(short color, HANDLE hOut);
 
     // explicitly set the background color of console
@@ -159,7 +159,11 @@ namespace winConio
 
     void paintBackground(int x1, int y1, int x2, int y2, short color, HANDLE hOut)
     {
-        SetConsoleTextAttribute(hOut, TOTAL_COLORS * color + WHITE);
+
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        SetConsoleTextAttribute(hOut, TOTAL_COLORS * color + winConio::WHITE);
 
         int width = x2 - x1 + 1;
         for (int i = y1; i <= y2; ++i)
@@ -168,15 +172,15 @@ namespace winConio
             std::cout << std::string(width, ' ');
         }
 
-        SetConsoleTextAttribute(hOut, WHITE);
+        SetConsoleTextAttribute(hOut, csbi.wAttributes);
     }
 
     void setTextColor(short color, HANDLE hOut)
     {
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         GetConsoleScreenBufferInfo(hOut, &csbi);
-
         const short PREV_BG_COLOR = csbi.wAttributes / TOTAL_COLORS;
+
         SetConsoleTextAttribute(hOut, TOTAL_COLORS * PREV_BG_COLOR + color);
     }
 
@@ -184,8 +188,8 @@ namespace winConio
     {
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         GetConsoleScreenBufferInfo(hOut, &csbi);
-
         const short PREV_TEXT_COLOR = csbi.wAttributes % TOTAL_COLORS;
+
         SetConsoleTextAttribute(hOut, TOTAL_COLORS * bgColor + PREV_TEXT_COLOR);
     }
 
