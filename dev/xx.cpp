@@ -12,11 +12,21 @@ int main()
 
     winConio::clearScreen(hStdOut);
     winConio::setFullScreen();
+    winConio::displayCursor(false, hStdOut);
     // winConio::ConsoleDimentions consoleDimens= winConio::getConsoleDimentions(hStdOut);
 
     box::Box box(0, 0, 15, 15, "Window", winConio::BLUE, winConio::WHITE, hStdOut);
     box.setFocus(true);
-    winConio::displayCursor(false, hStdOut);
+    box.setNoOfLines(14);
+    Sleep(1000);
+    box.scroll(box::SCROLL_DOWN);
+    Sleep(1000);
+    box.scroll(box::SCROLL_DOWN);
+    Sleep(1000);
+    box.scroll(box::SCROLL_UP);
+    Sleep(1000);
+    box.scroll(box::SCROLL_UP);
+    Sleep(1000);
 
     int a = getch();
 
