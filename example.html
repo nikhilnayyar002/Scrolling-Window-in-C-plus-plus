@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      .box-cont {
+        width: 290px;
+        font-family: monospace;
+        white-space: pre;
+        line-height: 14px;
+      }
+      .box-cont .row {
+        display: inline-block;
+        width: 100%;
+        background-color: blue;
+        position: relative;
+        height: 14px;
+        line-height: inherit;
+        padding-left: 16px;
+      }
+      .box-cont .row::before {
+        content: "█";
+        position: absolute;
+        left: 0;
+      }
+      .box-cont .row::after {
+        content: "▒";
+        position: absolute;
+        right: 0px;
+        background-color: black;
+      }
+      .box-cont .scroll-thumb::after {
+        content: "▓";
+      }
+      .box-cont .scroll-btn-top::after {
+        content: "▲";
+      }
+      .box-cont .scroll-btn-bottom::after {
+        content: "▼";
+      }
+      .console-bg {
+        height: 400px;
+        background-image: url(images/29VWc.png);
+        background-repeat: no-repeat;
+        /* background-position:center center; */
+        /* background-size:contain; */
+        padding-top: 50px;
+        padding-left: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h3>Ascii Characters in console (Unicode in web actually! )</h6>
+      <ul>
+        <li>▲ 30 Scroll Button Top</li>
+        <li>▼ 31 Scroll Button Down</li>
+        <li>▒ 177 Scroll Bar</li>
+
+        <li>▓ 178 Scroll Bar Thumb</li>
+        <li>▀ 223 horizontal border bottom</li>
+        <li>▄ 220 horizontal border Top</li>
+        <li>█ 219 vertical border</li>
+      </ul>
+    </div>
+    <div class="console-bg">
+      <div class="box-cont">
+        ▄▄Window▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+        <span class="row scroll-btn-top"> </span>
+        <span class="row">Hello Everyone</span>
+        <span class="row">Hello Everyone</span>
+        <span class="row scroll-thumb">Hello Everyone</span>
+        <span class="row scroll-thumb">Hello Everyone</span>
+        <span class="row">Hello Everyone</span>
+        <span class="row">Hello Everyone</span>
+        <span class="row">Hello Everyone</span>
+        <span class="row scroll-btn-bottom"> </span>
+        ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+      </div>
+    </div>
+  </body>
+</html>
