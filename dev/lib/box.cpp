@@ -29,7 +29,7 @@ namespace box
         scrollButtonDown = 31,
     };
 
-    const short SCROLL_THUMB_STEP_VALUE = 1, SCROLL_BUTTON_HEIGHT = 1, BORDER_WIDTH = 1, SCROLL_DOWN = 1, SCROLL_UP = 0;
+    const short MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL = 1, SCROLL_BUTTON_HEIGHT = 1, BORDER_WIDTH = 1;
 
     const short BOX_BORDER_HIGHLIGHTED_COLOR = winConio::YELLOW;
 
@@ -65,7 +65,7 @@ namespace box
     // 000000000000
     const short BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE = 1;
 
-    const short BOX_MAX_DOTS_IN_RENDERED_TITLE = 2;
+    const short MAX_BOX_DOTS_IN_RENDERED_TITLE = 2;
 
     class Box
     {
@@ -106,12 +106,14 @@ namespace box
         short scrollThumbHeight;
         float scrollThumbPos;
         short scrollBarHeight;
-        float scrollThumbStepValue; // how much to move the scrollThumb (one at a time) up/down. Value should be in range: (0,1]
+        // how much to move the scrollThumb (at minimum) up/down.
+        // Value should be in range: (0,1] bcz it is calculated as: (scrollBarHeight - scrollThumbHeight) / linesNotRendered
+        float scrollThumbUnitDistanceTraversal;
 
         // lines
 
-        std::vector<std::string> lines;
-        int noOfLines, linesNotRendered, topLinePos;
+        int noOfLines, // the no of lines affect the scrollbar.
+            linesNotRendered;
 
         // extra data members
 
@@ -128,37 +130,17 @@ namespace box
         void renderVerBorder(lib::Position pc);
         void renderHorBorder(Chars bc);
         void renderBorders(int borderTxtColor, int borderBgColor);
-        void resetOutput();
+        void resetOutput(); // clears the content inside the box
         void reRenderScrollbar();
-        void renderContent();
-
-        // other private methods
-
-        void setNoOfLines(int n);
 
     public:
-        // output buffer
-        std::ostringstream out;
-
         Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
-
-        // methods to get inner box parameters
-
-        int getInnerHorSize() { return innerHorSize; }
-        int getInnerVerSize() { return innerVerSize; }
-
-        COORD getInnerTopLeftCoord() { return innerTopLeftCoord; }
-        COORD getInnerBottomRightCoord() { return innerBottomRightCoord; }
-
-        // focus methods
 
         void setFocus(bool);
         bool hasFocus() { return _hasFocus; }
 
-        // other
-
-        void scroll(int scrollDirection);
-        void endLine();
+        bool scroll(int scrollDirection, int noOfLines);
+        void setNoOfLines(int n);
 
         // friend classes to box
 
@@ -168,7 +150,7 @@ namespace box
     };
 
     Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title), out(std::ostringstream::ate)
+        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title)
     {
         // if (!(backgroundColor >= 0 && backgroundColor < winConio::TOTAL_COLORS))
         //     throw std::runtime_error("Box::backgroundColor is not valid.");
@@ -228,11 +210,11 @@ namespace box
         //      nikhil
         if (!maxLengthOfRenderedTitle)
             renderedTitle = "";
-        else if (maxLengthOfRenderedTitle <= BOX_MAX_DOTS_IN_RENDERED_TITLE)
+        else if (maxLengthOfRenderedTitle <= MAX_BOX_DOTS_IN_RENDERED_TITLE)
             renderedTitle = std::string(maxLengthOfRenderedTitle, '.');
         else if (title.length() > maxLengthOfRenderedTitle)
         {
-            std::string dots = std::string(BOX_MAX_DOTS_IN_RENDERED_TITLE, '.');
+            std::string dots = std::string(MAX_BOX_DOTS_IN_RENDERED_TITLE, '.');
             renderedTitle = title.substr(0, maxLengthOfRenderedTitle - dots.length());
             renderedTitle += dots;
         }
@@ -287,13 +269,13 @@ namespace box
                 scrollBarHeight = innerVerSizePadded - 2 * SCROLL_BUTTON_HEIGHT; // when there is no padding (>=1) the space for scroll Button Top and Bottom should be subtracted
 
             scrollThumbHeight = scrollThumbPos = 0;
-            scrollThumbStepValue = SCROLL_THUMB_STEP_VALUE;
+            scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
             hasScrollBar = false;
         }
 
         // lines
 
-        noOfLines = linesNotRendered = topLinePos = 0;
+        noOfLines = linesNotRendered = 0;
     }
 
     // render methods ********************************************************************
@@ -304,18 +286,18 @@ namespace box
     void Box::renderBorders(int borderTxtColor, int borderBgColor)
     {
         winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
-        renderVerBorder(lib::Position::left);
-        renderVerBorder(lib::Position::right);
+        renderVerBorder(lib::Position::posLeft);
+        renderVerBorder(lib::Position::posRight);
         renderHorBorder(Chars::borderHorizontalTop);
         renderHorBorder(Chars::borderHorizontalBottom);
     }
     void Box::renderVerBorder(lib::Position pc)
     {
-        const short x = pc == lib::Position::left ? x1 : x2;
+        const short x = pc == lib::Position::posLeft ? x1 : x2;
         short y = y1;
         const unsigned char borderChar = Chars::borderVertical;
 
-        if (pc == lib::Position::right && hasScrollBar)
+        if (pc == lib::Position::posRight && hasScrollBar)
         {
             //  create vertical scroll output string
 
@@ -377,79 +359,7 @@ namespace box
         else
             winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
 
-        renderVerBorder(lib::Position::right);
-    }
-    void Box::endLine()
-    {
-        const std::string str = out.str();
-        // reset the buffer with set overload of ostringstream::str
-        out.str("");
-        // split the strings based on newlines ('\n') in it
-        std::vector<std::string> newlines = lib::strSpit(str, "\n");
-
-        // let \ = \n
-        // string = nikhil\here it is bro
-        //
-        //      newlines
-        //           nikhil
-        //           here it is bro
-        //
-        //      inner box width padded = 5
-        //
-        //      parts (0 represent border, # represents space added to complete the line width equal to inner box width padded):
-        //
-        //      0nikhi0
-        //      0l####0
-        //      0here#0
-        //      0it is0
-        //      0bro##0
-        //
-        // string = \
-        //
-        //      newlines
-        //           ''
-        //
-        for (auto &line : newlines)
-        {
-            // if line is less or same sized as inner padded width of box then push it as line. Also add space if necc.
-            if (line.length() <= innerHorSizePadded)
-                lines.push_back(line + std::string(innerHorSizePadded - line.length(), ' '));
-            // divide the line into parts and push the parts as lines
-            else
-            {
-                std::vector<std::string> parts = lib::strToEqualSizeParts(line, innerHorSizePadded);
-                short lastPartPos = parts.size() - 1;
-
-                // parts before 'last part'
-                for (short i = 0; i < lastPartPos; ++i)
-                    lines.push_back(parts[i]);
-
-                // last part: its special bcz we may need to add space to it.
-                
-                std::string &lastPart = parts[lastPartPos];
-                lines.push_back(lastPart + std::string(innerHorSizePadded - lastPart.length(), ' '));
-            }
-        }
-
-        setNoOfLines(lines.size());
-    }
-    void Box::renderContent()
-    {
-        const short x = innerTopLeftCoordPadded.X;
-        short y = innerTopLeftCoordPadded.Y;
-        const short yBottom = innerBottomRightCoordPadded.Y;
-
-        int pos = topLinePos, linesSize = lines.size();
-
-        winConio::setTextAndBackgroundColor(textColor, backgroundColor, hOut);
-
-        // render till y reaches yBottom and also lines are available to render
-        while (y <= yBottom && pos != linesSize)
-        {
-            winConio::gotoxy(x, y, hOut);
-            std::cout << lines[pos++];
-            ++y;
-        }
+        renderVerBorder(lib::Position::posRight);
     }
     // ********************************************************************
 
@@ -478,40 +388,50 @@ namespace box
                 if (linesNotRendered < scrollBarHeight)
                 {
                     scrollThumbHeight = scrollBarHeight - linesNotRendered;
-                    scrollThumbStepValue = SCROLL_THUMB_STEP_VALUE;
+                    scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
                 }
                 else
                 {
                     scrollThumbHeight = 1;
                     // remaining steps in scrollbar / linesNotRendered
-                    scrollThumbStepValue = (scrollBarHeight - scrollThumbHeight) / linesNotRendered;
+                    scrollThumbUnitDistanceTraversal = (scrollBarHeight - scrollThumbHeight) / linesNotRendered;
                 }
             }
             else
                 hasScrollBar = false;
         }
 
-        renderContent();
         reRenderScrollbar();
     }
 
-    void Box::scroll(int scrollDirection)
+    bool Box::scroll(int scrollDirection, int noOfLines = 1)
     {
         int _scrollThumbPos = int(scrollThumbPos);
+        bool canScroll = false;
 
-        if (scrollDirection == SCROLL_UP && _scrollThumbPos != 0)
+        if (scrollDirection == lib::Direction::dirUp && _scrollThumbPos != 0)
         {
-            scrollThumbPos -= scrollThumbStepValue;
-            topLinePos -= SCROLL_THUMB_STEP_VALUE;
+            float val = scrollThumbUnitDistanceTraversal * noOfLines;
+            scrollThumbPos -= val < 0 ? 0 : val;
+            canScroll = true;
         }
 
-        else if (scrollDirection == SCROLL_DOWN && (_scrollThumbPos + scrollThumbHeight) != innerVerSizePadded)
+        else if (scrollDirection == lib::Direction::dirDown && (_scrollThumbPos + scrollThumbHeight) != innerVerSizePadded)
         {
-            scrollThumbPos += scrollThumbStepValue;
-            topLinePos += SCROLL_THUMB_STEP_VALUE;
+            float val = scrollThumbUnitDistanceTraversal * noOfLines;
+            int _newScrollThumbPos = int(scrollThumbPos + val);
+
+            if ((_newScrollThumbPos + scrollThumbHeight) > innerVerSizePadded)
+                scrollThumbPos = innerVerSizePadded;
+            else
+                scrollThumbPos += val;
+
+            canScroll = true;
         }
 
-        renderContent();
-        reRenderScrollbar();
+        if (canScroll)
+            reRenderScrollbar();
+
+        return canScroll;
     }
 }

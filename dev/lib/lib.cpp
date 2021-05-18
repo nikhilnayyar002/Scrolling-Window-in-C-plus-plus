@@ -7,10 +7,18 @@ namespace lib
 {
     enum Position
     {
-        top = 1,
-        bottom = 2,
-        left = 3,
-        right = 4
+        posTop = 1,
+        posBottom = 2,
+        posLeft = 3,
+        posRight = 4
+    };
+
+    enum Direction
+    {
+        dirUp = 1,
+        dirDown = 2,
+        dirLeft = 3,
+        dirRight = 4
     };
 
     inline void nameFailedWithCode(const std::string name, long code)

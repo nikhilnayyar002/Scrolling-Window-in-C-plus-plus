@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #include "./lib/conio.cpp"
-#include "./lib/box.cpp"
+#include "./lib/scrollWin.cpp"
 
 using namespace std;
 
@@ -13,28 +13,27 @@ int main()
     winConio::displayCursor(false, hStdOut);
     // winConio::ConsoleDimentions consoleDimens= winConio::getConsoleDimentions(hStdOut);
 
-    box::Box box(0, 0, 15, 15, "Window", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
-    box.setFocus(true);
+    scrollWin::SwMain sWMain(0, 0, 15, 15, "Window", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
 
-    box.out << "Hi:" << '\n';
-    box.out << "This:" << '\n';
-    box.out << "this output breaks to next line since it overflowed.";
-    box.out << "\n6666666666666666999999999999999";
-    box.endLine();
-    box.out << "Hi:" << '\n';
-    box.out << "This:" << '\n';
-    box.out << "this output breaks to next line since it overflowed.";
-    box.out << "\n6666666666666666999999999999999";
-    box.endLine();
+    sWMain.out << "Hi:" << '\n';
+    sWMain.out << "This:" << '\n';
+    sWMain.out << "this output breaks to next line since it overflowed.";
+    sWMain.out << "\n6666666666666666999999999999999";
+    sWMain.endLine();
+    sWMain.out << "Hi:" << '\n';
+    sWMain.out << "This:" << '\n';
+    sWMain.out << "this output breaks to next line since it overflowed.";
+    sWMain.out << "\n6666666666666666999999999999999";
+    sWMain.endLine();
 
     Sleep(1000);
-    box.scroll(box::SCROLL_DOWN);
+    sWMain.scroll(lib::Direction::dirDown);
     Sleep(1000);
-    box.scroll(box::SCROLL_DOWN);
+    sWMain.scroll(lib::Direction::dirDown);
     Sleep(1000);
-    box.scroll(box::SCROLL_UP);
+    sWMain.scroll(lib::Direction::dirUp);
     Sleep(1000);
-    box.scroll(box::SCROLL_UP);
+    sWMain.scroll(lib::Direction::dirUp);
     Sleep(1000);
 
     int a = winConio::getch();
