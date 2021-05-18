@@ -383,7 +383,7 @@ namespace box
     {
         const std::string str = out.str();
         // reset the buffer with set overload of ostringstream::str
-        out.str(std::string());
+        out.str("");
         // split the strings based on newlines ('\n') in it
         std::vector<std::string> newlines = lib::strSpit(str, "\n");
 
@@ -396,13 +396,13 @@ namespace box
         //
         //      inner box width padded = 5
         //
-        //      parts (0 represent border):
+        //      parts (0 represent border, # represents space added to complete the line width equal to inner box width padded):
         //
         //      0nikhi0
-        //      0l    0
-        //      0here 0
+        //      0l####0
+        //      0here#0
         //      0it is0
-        //      0bro  0
+        //      0bro##0
         //
         // string = \
         //
@@ -411,13 +411,23 @@ namespace box
         //
         for (auto &line : newlines)
         {
-            if (line.length() <= innerHorSizePadded) // if line is less or same sized as inner padded width of box then push it as line
-                lines.push_back(line);
-            else // divide the line into parts and push the parts as lines
+            // if line is less or same sized as inner padded width of box then push it as line. Also add space if necc.
+            if (line.length() <= innerHorSizePadded)
+                lines.push_back(line + std::string(innerHorSizePadded - line.length(), ' '));
+            // divide the line into parts and push the parts as lines
+            else
             {
-                std::vector<std::string> parts = lib::strToEqualSizeParts(str, innerHorSizePadded);
-                for (auto &part : parts)
-                    lines.push_back(part);
+                std::vector<std::string> parts = lib::strToEqualSizeParts(line, innerHorSizePadded);
+                short lastPartPos = parts.size() - 1;
+
+                // parts before 'last part'
+                for (short i = 0; i < lastPartPos; ++i)
+                    lines.push_back(parts[i]);
+
+                // last part: its special bcz we may need to add space to it.
+                
+                std::string &lastPart = parts[lastPartPos];
+                lines.push_back(lastPart + std::string(innerHorSizePadded - lastPart.length(), ' '));
             }
         }
 
@@ -427,16 +437,18 @@ namespace box
     {
         const short x = innerTopLeftCoordPadded.X;
         short y = innerTopLeftCoordPadded.Y;
-        const short yBottom = innerBottomRightCoord.Y;
+        const short yBottom = innerBottomRightCoordPadded.Y;
 
-        int pos = topLinePos;
+        int pos = topLinePos, linesSize = lines.size();
 
-        winConio::setTextAndBackgroundColor(textColor, borderBgColor, hOut);
+        winConio::setTextAndBackgroundColor(textColor, backgroundColor, hOut);
 
-        while (++y <= yBottom)
+        // render till y reaches yBottom and also lines are available to render
+        while (y <= yBottom && pos != linesSize)
         {
             winConio::gotoxy(x, y, hOut);
             std::cout << lines[pos++];
+            ++y;
         }
     }
     // ********************************************************************
@@ -488,10 +500,18 @@ namespace box
         int _scrollThumbPos = int(scrollThumbPos);
 
         if (scrollDirection == SCROLL_UP && _scrollThumbPos != 0)
+        {
             scrollThumbPos -= scrollThumbStepValue;
-        else if (scrollDirection == SCROLL_DOWN && (_scrollThumbPos + scrollThumbHeight) != innerVerSizePadded)
-            scrollThumbPos += scrollThumbStepValue;
+            topLinePos -= SCROLL_THUMB_STEP_VALUE;
+        }
 
+        else if (scrollDirection == SCROLL_DOWN && (_scrollThumbPos + scrollThumbHeight) != innerVerSizePadded)
+        {
+            scrollThumbPos += scrollThumbStepValue;
+            topLinePos += SCROLL_THUMB_STEP_VALUE;
+        }
+
+        renderContent();
         reRenderScrollbar();
     }
 }
