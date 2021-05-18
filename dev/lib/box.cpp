@@ -1,11 +1,11 @@
 #pragma once
-/*******************************************************************************************************************************************
- * headers
- * *****************************************************************************************************************************************/
+
 #include <bits/stdc++.h>
 #include <windows.h>
 #include <stdexcept>
 #include "conio.cpp"
+#include "lib.cpp"
+#include <sstream>
 
 // forward declaration to support in future scrollWin classes as friend classes to class Box
 // (in short) Support to declaration:  friend class scrollWin::X;
@@ -27,14 +27,6 @@ namespace box
         scrollBarThumb = 178,
         scrollButtonTop = 30,
         scrollButtonDown = 31,
-    };
-
-    enum Position
-    {
-        top = 1,
-        bottom = 2,
-        left = 3,
-        right = 4
     };
 
     const short SCROLL_THUMB_STEP_VALUE = 1, SCROLL_BUTTON_HEIGHT = 1, BORDER_WIDTH = 1, SCROLL_DOWN = 1, SCROLL_UP = 0;
@@ -94,7 +86,7 @@ namespace box
         // inner box output region parameters
 
         short padding;
-        short bgColor, txtColor;
+        short backgroundColor, textColor;
         int innerHorSize, innerVerSize;
         COORD innerTopLeftCoord, innerBottomRightCoord;
 
@@ -118,7 +110,8 @@ namespace box
 
         // lines
 
-        int noOfLines, linesNotRendered;
+        std::vector<std::string> lines;
+        int noOfLines, linesNotRendered, topLinePos;
 
         // extra data members
 
@@ -132,14 +125,22 @@ namespace box
 
         // render methods
 
-        void renderVerBorder(Position pc);
+        void renderVerBorder(lib::Position pc);
         void renderHorBorder(Chars bc);
         void renderBorders(int borderTxtColor, int borderBgColor);
         void resetOutput();
         void reRenderScrollbar();
+        void renderContent();
+
+        // other private methods
+
+        void setNoOfLines(int n);
 
     public:
-        Box(short x1, short y1, short x2, short y2, std::string title, short bgColor, short txtColor, HANDLE hOut);
+        // output buffer
+        std::ostringstream out;
+
+        Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
         // methods to get inner box parameters
 
@@ -154,8 +155,10 @@ namespace box
         void setFocus(bool);
         bool hasFocus() { return _hasFocus; }
 
-        void setNoOfLines(int n); // should be private
+        // other
+
         void scroll(int scrollDirection);
+        void endLine();
 
         // friend classes to box
 
@@ -164,14 +167,14 @@ namespace box
         friend class scrollWin::SwSelec;
     };
 
-    Box::Box(short x1, short y1, short x2, short y2, std::string title, short bgColor, short txtColor, HANDLE hOut)
-        : _hasFocus(false), hOut(hOut), bgColor(bgColor), txtColor(txtColor), title(title)
+    Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title), out(std::ostringstream::ate)
     {
-        // if (!(bgColor >= 0 && bgColor < winConio::TOTAL_COLORS))
-        //     throw std::runtime_error("Box::bgColor is not valid.");
+        // if (!(backgroundColor >= 0 && backgroundColor < winConio::TOTAL_COLORS))
+        //     throw std::runtime_error("Box::backgroundColor is not valid.");
 
-        // if (!(txtColor >= 0 && txtColor < winConio::TOTAL_COLORS))
-        //     throw std::runtime_error("Box::txtColor is not valid.");
+        // if (!(textColor >= 0 && textColor < winConio::TOTAL_COLORS))
+        //     throw std::runtime_error("Box::textColor is not valid.");
 
         // check for dimensions inconsistencies
         if (!(x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1))
@@ -188,9 +191,6 @@ namespace box
     void Box::setRenderedTitle()
     {
         int maxLengthOfRenderedTitle = innerHorSize - actualOffsetLengthBeforeRenderedTitle;
-
-        std::cout<<title.length()<<maxLengthOfRenderedTitle;
-        winConio::getch();
 
         // if length Of Title is small, then not display it, display it with dots or simply display it. For example
         // title = nikhil
@@ -293,29 +293,29 @@ namespace box
 
         // lines
 
-        noOfLines = linesNotRendered = 0;
+        noOfLines = linesNotRendered = topLinePos = 0;
     }
 
     // render methods ********************************************************************
     void Box::resetOutput()
     {
-        winConio::paintBackground(innerTopLeftCoord.X, innerTopLeftCoord.Y, innerBottomRightCoord.X, innerBottomRightCoord.Y, bgColor, hOut);
+        winConio::paintBackground(innerTopLeftCoord.X, innerTopLeftCoord.Y, innerBottomRightCoord.X, innerBottomRightCoord.Y, backgroundColor, hOut);
     }
     void Box::renderBorders(int borderTxtColor, int borderBgColor)
     {
         winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
-        renderVerBorder(Position::left);
-        renderVerBorder(Position::right);
+        renderVerBorder(lib::Position::left);
+        renderVerBorder(lib::Position::right);
         renderHorBorder(Chars::borderHorizontalTop);
         renderHorBorder(Chars::borderHorizontalBottom);
     }
-    void Box::renderVerBorder(Position pc)
+    void Box::renderVerBorder(lib::Position pc)
     {
-        const short x = pc == Position::left ? x1 : x2;
+        const short x = pc == lib::Position::left ? x1 : x2;
         short y = y1;
         const unsigned char borderChar = Chars::borderVertical;
 
-        if (pc == Position::right && hasScrollBar)
+        if (pc == lib::Position::right && hasScrollBar)
         {
             //  create vertical scroll output string
 
@@ -333,8 +333,7 @@ namespace box
             while (++y < y2)
             {
                 winConio::gotoxy(x, y, hOut);
-                std::cout << temp[i];
-                ++i;
+                std::cout << temp[i++];
             }
         }
         else
@@ -378,7 +377,67 @@ namespace box
         else
             winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
 
-        renderVerBorder(Position::right);
+        renderVerBorder(lib::Position::right);
+    }
+    void Box::endLine()
+    {
+        const std::string str = out.str();
+        // reset the buffer with set overload of ostringstream::str
+        out.str(std::string());
+        // split the strings based on newlines ('\n') in it
+        std::vector<std::string> newlines = lib::strSpit(str, "\n");
+
+        // let \ = \n
+        // string = nikhil\here it is bro
+        //
+        //      newlines
+        //           nikhil
+        //           here it is bro
+        //
+        //      inner box width padded = 5
+        //
+        //      parts (0 represent border):
+        //
+        //      0nikhi0
+        //      0l    0
+        //      0here 0
+        //      0it is0
+        //      0bro  0
+        //
+        // string = \
+        //
+        //      newlines
+        //           ''
+        //
+        for (auto &line : newlines)
+        {
+            if (line.length() <= innerHorSizePadded) // if line is less or same sized as inner padded width of box then push it as line
+                lines.push_back(line);
+            else // divide the line into parts and push the parts as lines
+            {
+                std::vector<std::string> parts = lib::strToEqualSizeParts(str, innerHorSizePadded);
+                for (auto &part : parts)
+                    lines.push_back(part);
+            }
+        }
+
+        setNoOfLines(lines.size());
+    }
+    void Box::renderContent()
+    {
+        const short x = innerTopLeftCoordPadded.X;
+        short y = innerTopLeftCoordPadded.Y;
+        const short yBottom = innerBottomRightCoord.Y;
+
+        int pos = topLinePos;
+
+        winConio::setTextAndBackgroundColor(textColor, borderBgColor, hOut);
+
+        while (++y <= yBottom)
+        {
+            winConio::gotoxy(x, y, hOut);
+            std::cout << lines[pos++];
+        }
     }
     // ********************************************************************
 
@@ -420,6 +479,7 @@ namespace box
                 hasScrollBar = false;
         }
 
+        renderContent();
         reRenderScrollbar();
     }
 

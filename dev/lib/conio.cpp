@@ -3,7 +3,7 @@
 #include <bits/stdc++.h>
 #include <windows.h>
 #include <conio.h>
-#include "utility.cpp"
+#include "lib.cpp"
 
 namespace winConio
 {
@@ -106,7 +106,7 @@ namespace winConio
 
         if (hStdOut == INVALID_HANDLE_VALUE)
         {
-            WINCONIO_FAILURE_MESSAGE("getStdHandle", GetLastError());
+            lib::nameFailedWithCode("getStdHandle", GetLastError());
             throw std::runtime_error("getStdHandle failed");
         }
 
@@ -216,7 +216,7 @@ namespace winConio
             NULL);                   // reserved; must be NULL
         if (hNewScreenBuffer == INVALID_HANDLE_VALUE)
         {
-            WINCONIO_FAILURE_MESSAGE("CreateConsoleScreenBuffer", GetLastError());
+            lib::nameFailedWithCode("CreateConsoleScreenBuffer", GetLastError());
             return nullptr;
         }
 
@@ -227,7 +227,7 @@ namespace winConio
     {
         if (!SetConsoleActiveScreenBuffer(hOut))
         {
-            WINCONIO_FAILURE_MESSAGE("SetConsoleActiveScreenBuffer", GetLastError());
+            lib::nameFailedWithCode("SetConsoleActiveScreenBuffer", GetLastError());
             return 1;
         }
         return 0;
@@ -282,7 +282,7 @@ namespace winConio
 
         if (!fSuccess)
         {
-            WINCONIO_FAILURE_MESSAGE("ReadConsoleOutput", GetLastError());
+            lib::nameFailedWithCode("ReadConsoleOutput", GetLastError());
             return false;
         }
         return true;
@@ -301,7 +301,7 @@ namespace winConio
 
         if (!fSuccess)
         {
-            WINCONIO_FAILURE_MESSAGE("WriteConsoleOutput", GetLastError());
+            lib::nameFailedWithCode("WriteConsoleOutput", GetLastError());
             return false;
         }
         return true;
