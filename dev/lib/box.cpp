@@ -73,25 +73,6 @@ namespace box
     // 000000000000
     const short BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE = 1;
 
-    // if length Of Rendered Title is too small, then set max dots to display. For example
-    // title = nikhil
-    // max dots = 2 (>=0)
-    //
-    // 1. box hor size = 00000
-    // 00000
-    // nik..
-    //
-    // 2. box hor size = 000
-    // 000
-    // n..
-    //
-    // 3. box hor size = 00
-    // 00
-    // ..
-    //
-    // 3. box hor size = 0
-    // 0
-    // .
     const short BOX_MAX_DOTS_IN_RENDERED_TITLE = 2;
 
     class Box
@@ -206,23 +187,57 @@ namespace box
 
     void Box::setRenderedTitle()
     {
-        int lengthOfRenderedTitle = innerHorSize - actualOffsetLengthBeforeRenderedTitle;
+        int maxLengthOfRenderedTitle = innerHorSize - actualOffsetLengthBeforeRenderedTitle;
 
-        // dont set the title since box is too small
-        if (!lengthOfRenderedTitle)
+        std::cout<<title.length()<<maxLengthOfRenderedTitle;
+        winConio::getch();
+
+        // if length Of Title is small, then not display it, display it with dots or simply display it. For example
+        // title = nikhil
+        // max dots = 2 (>=0)
+        //
+        // first condition :
+        //      1. maxLengthOfRenderedTitle = 0 ()
+        //      # dont render
+        //
+        // second condition :
+        //      1. maxLengthOfRenderedTitle = 2 (00)
+        //      00
+        //      ..
+        //
+        //      1. maxLengthOfRenderedTitle = 1 (0)
+        //      0
+        //      .
+        //
+        // third condition :
+        //      1. maxLengthOfRenderedTitle = 3 (000)
+        //      000
+        //      n..
+        //
+        //      2. maxLengthOfRenderedTitle = 5 (00000)
+        //      00000
+        //      nik..
+        //
+        // fourth condition :
+        //      1. maxLengthOfRenderedTitle = 6 (00000)
+        //      000000
+        //      nikhil
+        //
+        //      1. maxLengthOfRenderedTitle = 7 (00000)
+        //      0000000
+        //      nikhil
+        if (!maxLengthOfRenderedTitle)
             renderedTitle = "";
-        // if lengthOfRenderedTitle is too small, then set max
-        else if (lengthOfRenderedTitle <= BOX_MAX_DOTS_IN_RENDERED_TITLE)
-            renderedTitle = std::string(lengthOfRenderedTitle, '.');
-        else
+        else if (maxLengthOfRenderedTitle <= BOX_MAX_DOTS_IN_RENDERED_TITLE)
+            renderedTitle = std::string(maxLengthOfRenderedTitle, '.');
+        else if (title.length() > maxLengthOfRenderedTitle)
         {
-            // 00000
-            // nik..
-
             std::string dots = std::string(BOX_MAX_DOTS_IN_RENDERED_TITLE, '.');
-            renderedTitle = title.substr(0, lengthOfRenderedTitle - dots.length());
+            renderedTitle = title.substr(0, maxLengthOfRenderedTitle - dots.length());
             renderedTitle += dots;
         }
+        else
+            renderedTitle = title;
     }
 
     void Box::setDimension(short x1, short y1, short x2, short y2)
