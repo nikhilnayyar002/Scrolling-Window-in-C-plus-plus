@@ -2,6 +2,7 @@
 
 #include <bits/stdc++.h>
 #include <windows.h>
+#include <conio.h>
 #include "utility.cpp"
 
 namespace winConio
@@ -68,6 +69,9 @@ namespace winConio
     ConsoleDimentions getConsoleDimentions(HANDLE hOut);
 
     void displayCursor(bool state, HANDLE hOut);
+
+    // Gets a character from the console without echo.
+    inline int getch();
 
     // Class that provides getText and putText functions with shared variables/objects.
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
@@ -227,6 +231,11 @@ namespace winConio
             return 1;
         }
         return 0;
+    }
+
+    inline int getch()
+    {
+        return _getch();
     }
 
     ConsoleTextCapture::ConsoleTextCapture(ConsoleDimentions cd)

@@ -1,6 +1,4 @@
 #include <bits/stdc++.h>
-#include <windows.h>
-#include <conio.h>
 #include "./lib/conio.cpp"
 #include "./lib/box.cpp"
 
@@ -28,7 +26,7 @@ int main()
     box.scroll(box::SCROLL_UP);
     Sleep(1000);
 
-    int a = getch();
+    int a = winConio::getch();
 
     return 0;
 }
