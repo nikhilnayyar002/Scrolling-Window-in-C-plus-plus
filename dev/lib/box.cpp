@@ -18,17 +18,6 @@ namespace scrollWin
 
 namespace box
 {
-    enum Chars
-    {
-        borderHorizontalBottom = 223,
-        borderHorizontalTop = 220,
-        borderVertical = 219,
-        scrollBar = 177,
-        scrollBarThumb = 178,
-        scrollButtonTop = 30,
-        scrollButtonDown = 31,
-    };
-
     const short MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL = 1, SCROLL_BUTTON_HEIGHT = 1, BORDER_WIDTH = 1;
 
     const short BOX_BORDER_HIGHLIGHTED_COLOR = winConio::YELLOW;
@@ -114,14 +103,14 @@ namespace box
         // render methods
 
         virtual void renderVerBorder(lib::Position pc);
-        virtual void renderHorBorder(Chars bc);
+        virtual void renderHorBorder(lib::Chars bc);
         void renderBorders(int borderTxtColor, int borderBgColor);
         void resetOutput(); // clears the content inside the box
 
     public:
         Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
-        void setFocus(bool);
+        void setFocus(bool state);
         bool hasFocus() { return _hasFocus; }
     };
 
@@ -150,7 +139,7 @@ namespace box
     public:
         BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
-        bool scroll(int scrollDirection, int noOfLines);
+        bool scroll(lib::Direction scrollDirection, int noOfLines);
         void setNoOfLines(int n);
 
         // friend classes to box
@@ -287,14 +276,14 @@ namespace box
         winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
         renderVerBorder(lib::Position::posLeft);
         renderVerBorder(lib::Position::posRight);
-        renderHorBorder(Chars::borderHorizontalTop);
-        renderHorBorder(Chars::borderHorizontalBottom);
+        renderHorBorder(lib::Chars::borderHorizontalTop);
+        renderHorBorder(lib::Chars::borderHorizontalBottom);
     }
     void Box::renderVerBorder(lib::Position pc)
     {
         const short x = pc == lib::Position::posLeft ? x1 : x2;
         short y = y1;
-        const unsigned char borderChar = Chars::borderVertical;
+        const unsigned char borderChar = lib::Chars::borderVertical;
 
         while (++y < y2)
         {
@@ -302,12 +291,12 @@ namespace box
             std::cout << borderChar;
         }
     }
-    void Box::renderHorBorder(Chars bc)
+    void Box::renderHorBorder(lib::Chars bc)
     {
-        winConio::gotoxy(x1, bc == Chars::borderHorizontalTop ? y1 : y2, hOut);
+        winConio::gotoxy(x1, bc == lib::Chars::borderHorizontalTop ? y1 : y2, hOut);
         const unsigned char borderChar = bc;
 
-        if (bc == Chars::borderHorizontalBottom)
+        if (bc == lib::Chars::borderHorizontalBottom)
             std::cout << std::string(horSize, borderChar);
         else
         {
@@ -330,7 +319,7 @@ namespace box
         }
     }
 
-    void Box::setFocus(bool state = false)
+    void Box::setFocus(bool state)
     {
         _hasFocus = state;
 
@@ -372,11 +361,11 @@ namespace box
 
             //  create vertical scroll output string
 
-            std::string temp(SCROLL_BUTTON_HEIGHT, _scrollThumbPos == 0 ? Chars::borderVertical : Chars::scrollButtonTop);                                            // top botton
-            temp += std::string(_scrollThumbPos, Chars::scrollBar);                                                                                                   // scrollBar without thumb
-            temp += std::string(scrollThumbHeight, Chars::scrollBarThumb);                                                                                            // scrollBarThumb
-            temp += std::string(innerVerSize - (temp.length() + SCROLL_BUTTON_HEIGHT), Chars::scrollBar);                                                             // scrollBar without thumb
-            temp += std::string(SCROLL_BUTTON_HEIGHT, (_scrollThumbPos + scrollThumbHeight) == innerVerSizePadded ? Chars::borderVertical : Chars::scrollButtonDown); // bottom botton
+            std::string temp(SCROLL_BUTTON_HEIGHT, _scrollThumbPos == 0 ? lib::Chars::borderVertical : lib::Chars::scrollButtonTop);                                            // top botton
+            temp += std::string(_scrollThumbPos, lib::Chars::scrollBar);                                                                                                        // scrollBar without thumb
+            temp += std::string(scrollThumbHeight, lib::Chars::scrollBarThumb);                                                                                                 // scrollBarThumb
+            temp += std::string(innerVerSize - (temp.length() + SCROLL_BUTTON_HEIGHT), lib::Chars::scrollBar);                                                                  // scrollBar without thumb
+            temp += std::string(SCROLL_BUTTON_HEIGHT, (_scrollThumbPos + scrollThumbHeight) == innerVerSizePadded ? lib::Chars::borderVertical : lib::Chars::scrollButtonDown); // bottom botton
 
             // render the scrollbar
 
@@ -431,7 +420,7 @@ namespace box
         reRenderScrollbar();
     }
 
-    bool BoxWithScrollBar::scroll(int scrollDirection, int noOfLines = 1)
+    bool BoxWithScrollBar::scroll(lib::Direction scrollDirection, int noOfLines = 1)
     {
         int _scrollThumbPos = int(scrollThumbPos);
         bool canScroll = false;

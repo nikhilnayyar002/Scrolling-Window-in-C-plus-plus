@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include "conio.cpp"
 #include "box.cpp"
+#include "lib.cpp"
 
 namespace scrollWin
 {
@@ -31,6 +32,8 @@ namespace scrollWin
             // *********
             maxTopLinePos;
 
+        void scroll(lib::Direction scrollDirection);
+
     public:
         // output stream object
         std::ostringstream out;
@@ -40,12 +43,15 @@ namespace scrollWin
         // render the contents inside the box
         void renderContent();
 
-        // render the contents in output stream object and reset it.
+        // add the content from output stream object into lines. Rerender the content inside the window possibly
         void endLine();
 
-        void scroll(int scrollDirection); // temporary function
+        int setActive();
     };
+}
 
+namespace scrollWin
+{
     SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
     {
@@ -129,7 +135,7 @@ namespace scrollWin
         }
     }
 
-    void SwMain::scroll(int scrollDirection)
+    void SwMain::scroll(lib::Direction scrollDirection)
     {
         const int noOfLinesToScroll = 1;
 
@@ -154,6 +160,35 @@ namespace scrollWin
             }
 
             renderContent();
+        }
+    }
+
+    int SwMain::setActive()
+    {
+        if (!box.hasFocus())
+            box.setFocus(true);
+
+        while (true)
+        {
+            int pressedKey = winConio::getch();
+
+            // When reading keys with conio and getch, in order to be able to handle special keys (arrow keys, function keys)
+            // while still fitting its return value in a char, getch returns special keys as two-char sequences.
+            // The first call returns 224, while the second call returns the code of the special key.
+            if (pressedKey == 224)
+            {
+                const char SPECIAL_ARROW_UP = 72, SPECIAL_ARROW_DOWN = 80;
+                // second call
+                pressedKey = winConio::getch();
+
+                if (pressedKey == SPECIAL_ARROW_UP)
+                    scroll(lib::Direction::dirUp);
+                else if (pressedKey == SPECIAL_ARROW_DOWN)
+                    scroll(lib::Direction::dirDown);
+            }
+            // return pressed key
+            else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
+                return pressedKey;
         }
     }
 }

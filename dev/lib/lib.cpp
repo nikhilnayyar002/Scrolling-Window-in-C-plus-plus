@@ -5,6 +5,21 @@
 
 namespace lib
 {
+    enum Chars
+    {
+        borderHorizontalBottom = 223, // ▀
+        borderHorizontalTop = 220,    // ▄
+        borderVertical = 219,         // █
+        scrollBar = 177,              // ▒
+        scrollBarThumb = 178,         // ▓
+        scrollButtonTop = 30,         // ▲
+        scrollButtonDown = 31,        // ▼
+        escape = 27,
+        carriageReturn = 13,
+        lineFeed = 10,
+        horizontalTab = 9,
+    };
+
     enum Position
     {
         posTop = 1,

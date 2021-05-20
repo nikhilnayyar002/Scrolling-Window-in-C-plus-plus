@@ -26,17 +26,7 @@ int main()
     sWMain.out << "\n6666666666666666999999999999999";
     sWMain.endLine();
 
-    Sleep(1000);
-    sWMain.scroll(lib::Direction::dirDown);
-    Sleep(1000);
-    sWMain.scroll(lib::Direction::dirDown);
-    Sleep(1000);
-    sWMain.scroll(lib::Direction::dirUp);
-    Sleep(1000);
-    sWMain.scroll(lib::Direction::dirUp);
-    Sleep(1000);
-
-    int a = winConio::getch();
+    sWMain.setActive();
 
     return 0;
 }
