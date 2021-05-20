@@ -43,6 +43,9 @@ namespace scrollWin
 
         SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
+        void setNextActiveWindow(SwBase &ref) { nextActiveWindow = &ref; }
+        SwBase *getNextActiveWindow() { return nextActiveWindow; }
+
         // render the contents inside the box
         virtual void renderContent() = 0;
 
@@ -67,6 +70,30 @@ namespace scrollWin
 
         int setActive();
     };
+
+    // this recipe when called allows switching between windows using tab key. Also if escape is pressed in a window it will break
+    // out of while loop and give back control to the caller function (the one who called it)
+    // pass the a window to set it as active initially.
+    void windowsRecipe1(SwBase &initialActiveWindow)
+    {
+        SwBase *activeWindow = &initialActiveWindow;
+
+        while (true)
+        {
+            int p = activeWindow->setActive();
+
+            // if horizontal tab is pressed switch to next active window
+            if (p == lib::Chars::horizontalTab)
+            {
+                scrollWin::SwBase *nextActiveWindow = activeWindow->getNextActiveWindow();
+                if (nextActiveWindow)
+                    activeWindow = nextActiveWindow;
+            }
+            // if escape is pressed then break out
+            else if (p == lib::Chars::escape)
+                break;
+        }
+    }
 }
 
 namespace scrollWin
@@ -213,8 +240,7 @@ namespace scrollWin
 
     int SwMain::setActive()
     {
-        if (!box.hasFocus())
-            box.setFocus(true);
+        box.setFocus(true);
 
         while (true)
         {
@@ -236,7 +262,10 @@ namespace scrollWin
             }
             // return pressed key
             else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
+            {
+                box.setFocus(false);
                 return pressedKey;
+            }
         }
     }
 }
