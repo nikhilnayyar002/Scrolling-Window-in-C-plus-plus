@@ -69,6 +69,7 @@ namespace box
 
     class Box
     {
+    protected:
         // hold the console buffer screen instance, where box should be rendered
         HANDLE hOut;
 
@@ -100,6 +101,32 @@ namespace box
         short borderTxtColor = winConio::WHITE;
         short borderBgColor = winConio::BLACK;
 
+        // extra data members
+
+        std::string renderedTitle;
+        short actualOffsetLengthBeforeRenderedTitle;
+
+        // initialize box data members
+
+        void setDimension(short x1, short y1, short x2, short y2);
+        void setRenderedTitle();
+
+        // render methods
+
+        virtual void renderVerBorder(lib::Position pc);
+        virtual void renderHorBorder(Chars bc);
+        void renderBorders(int borderTxtColor, int borderBgColor);
+        void resetOutput(); // clears the content inside the box
+
+    public:
+        Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+
+        void setFocus(bool);
+        bool hasFocus() { return _hasFocus; }
+    };
+
+    class BoxWithScrollBar : public Box
+    {
         // scrollbar
 
         bool hasScrollBar;
@@ -115,29 +142,13 @@ namespace box
         int noOfLines, // the no of lines affect the scrollbar.
             linesNotRendered;
 
-        // extra data members
-
-        std::string renderedTitle;
-        short actualOffsetLengthBeforeRenderedTitle;
-
-        // initialize box data members
-
-        void setDimension(short x1, short y1, short x2, short y2);
-        void setRenderedTitle();
-
         // render methods
 
         void renderVerBorder(lib::Position pc);
-        void renderHorBorder(Chars bc);
-        void renderBorders(int borderTxtColor, int borderBgColor);
-        void resetOutput(); // clears the content inside the box
         void reRenderScrollbar();
 
     public:
-        Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
-
-        void setFocus(bool);
-        bool hasFocus() { return _hasFocus; }
+        BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
         bool scroll(int scrollDirection, int noOfLines);
         void setNoOfLines(int n);
@@ -148,7 +159,12 @@ namespace box
         friend class scrollWin::SwMain;
         friend class scrollWin::SwSelec;
     };
+}
 
+// definations
+
+namespace box
+{
     Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title)
     {
@@ -260,25 +276,8 @@ namespace box
             actualOffsetLengthBeforeRenderedTitle = innerHorSize;
         else
             actualOffsetLengthBeforeRenderedTitle = BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE;
-
-        // scrollbar
-        {
-            if (padding)
-                scrollBarHeight = innerVerSizePadded;
-            else
-                scrollBarHeight = innerVerSizePadded - 2 * SCROLL_BUTTON_HEIGHT; // when there is no padding (>=1) the space for scroll Button Top and Bottom should be subtracted
-
-            scrollThumbHeight = scrollThumbPos = 0;
-            scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
-            hasScrollBar = false;
-        }
-
-        // lines
-
-        noOfLines = linesNotRendered = 0;
     }
 
-    // render methods ********************************************************************
     void Box::resetOutput()
     {
         winConio::paintBackground(innerTopLeftCoord.X, innerTopLeftCoord.Y, innerBottomRightCoord.X, innerBottomRightCoord.Y, backgroundColor, hOut);
@@ -297,33 +296,11 @@ namespace box
         short y = y1;
         const unsigned char borderChar = Chars::borderVertical;
 
-        if (pc == lib::Position::posRight && hasScrollBar)
+        while (++y < y2)
         {
-            //  create vertical scroll output string
-
-            int _scrollThumbPos = int(scrollThumbPos);
-
-            std::string temp(SCROLL_BUTTON_HEIGHT, _scrollThumbPos == 0 ? Chars::borderVertical : Chars::scrollButtonTop);                                            // top botton
-            temp += std::string(_scrollThumbPos, Chars::scrollBar);                                                                                                   // scrollBar without thumb
-            temp += std::string(scrollThumbHeight, Chars::scrollBarThumb);                                                                                            // scrollBarThumb
-            temp += std::string(innerVerSize - (temp.length() + SCROLL_BUTTON_HEIGHT), Chars::scrollBar);                                                             // scrollBar without thumb
-            temp += std::string(SCROLL_BUTTON_HEIGHT, (_scrollThumbPos + scrollThumbHeight) == innerVerSizePadded ? Chars::borderVertical : Chars::scrollButtonDown); // bottom botton
-
-            // render the scrollbar
-
-            int i = 0;
-            while (++y < y2)
-            {
-                winConio::gotoxy(x, y, hOut);
-                std::cout << temp[i++];
-            }
+            winConio::gotoxy(x, y, hOut);
+            std::cout << borderChar;
         }
-        else
-            while (++y < y2)
-            {
-                winConio::gotoxy(x, y, hOut);
-                std::cout << borderChar;
-            }
     }
     void Box::renderHorBorder(Chars bc)
     {
@@ -352,16 +329,6 @@ namespace box
             std::cout << temp;
         }
     }
-    void Box::reRenderScrollbar()
-    {
-        if (_hasFocus)
-            winConio::setTextAndBackgroundColor(BOX_BORDER_HIGHLIGHTED_COLOR, borderBgColor, hOut);
-        else
-            winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
-
-        renderVerBorder(lib::Position::posRight);
-    }
-    // ********************************************************************
 
     void Box::setFocus(bool state = false)
     {
@@ -374,7 +341,67 @@ namespace box
             renderBorders(borderTxtColor, borderBgColor);
     }
 
-    void Box::setNoOfLines(int n)
+    BoxWithScrollBar::BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+        : Box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    {
+        // scrollbar
+        {
+            if (padding)
+                scrollBarHeight = innerVerSizePadded;
+            else
+                scrollBarHeight = innerVerSizePadded - 2 * SCROLL_BUTTON_HEIGHT; // when there is no padding (>=1) the space for scroll Button Top and Bottom should be subtracted
+
+            scrollThumbHeight = scrollThumbPos = 0;
+            scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
+            hasScrollBar = false;
+        }
+
+        // lines
+
+        noOfLines = linesNotRendered = 0;
+    }
+
+    void BoxWithScrollBar::renderVerBorder(lib::Position pc)
+    {
+        if (pc == lib::Position::posRight && hasScrollBar)
+        {
+            const short x = x2;
+            short y = y1;
+
+            int _scrollThumbPos = int(scrollThumbPos);
+
+            //  create vertical scroll output string
+
+            std::string temp(SCROLL_BUTTON_HEIGHT, _scrollThumbPos == 0 ? Chars::borderVertical : Chars::scrollButtonTop);                                            // top botton
+            temp += std::string(_scrollThumbPos, Chars::scrollBar);                                                                                                   // scrollBar without thumb
+            temp += std::string(scrollThumbHeight, Chars::scrollBarThumb);                                                                                            // scrollBarThumb
+            temp += std::string(innerVerSize - (temp.length() + SCROLL_BUTTON_HEIGHT), Chars::scrollBar);                                                             // scrollBar without thumb
+            temp += std::string(SCROLL_BUTTON_HEIGHT, (_scrollThumbPos + scrollThumbHeight) == innerVerSizePadded ? Chars::borderVertical : Chars::scrollButtonDown); // bottom botton
+
+            // render the scrollbar
+
+            int i = 0;
+            while (++y < y2)
+            {
+                winConio::gotoxy(x, y, hOut);
+                std::cout << temp[i++];
+            }
+        }
+        else
+            Box::renderVerBorder(pc);
+    }
+
+    void BoxWithScrollBar::reRenderScrollbar()
+    {
+        if (_hasFocus)
+            winConio::setTextAndBackgroundColor(BOX_BORDER_HIGHLIGHTED_COLOR, borderBgColor, hOut);
+        else
+            winConio::setTextAndBackgroundColor(borderTxtColor, borderBgColor, hOut);
+
+        renderVerBorder(lib::Position::posRight);
+    }
+
+    void BoxWithScrollBar::setNoOfLines(int n)
     {
         noOfLines = n;
 
@@ -404,7 +431,7 @@ namespace box
         reRenderScrollbar();
     }
 
-    bool Box::scroll(int scrollDirection, int noOfLines = 1)
+    bool BoxWithScrollBar::scroll(int scrollDirection, int noOfLines = 1)
     {
         int _scrollThumbPos = int(scrollThumbPos);
         bool canScroll = false;

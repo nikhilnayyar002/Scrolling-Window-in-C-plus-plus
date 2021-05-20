@@ -11,7 +11,7 @@ namespace scrollWin
     {
 
         // box
-        box::Box box;
+        box::BoxWithScrollBar box;
 
         // lines
 
@@ -134,7 +134,7 @@ namespace scrollWin
         const int noOfLinesToScroll = 1;
 
         bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
-        
+
         if (didScrolled)
         {
             if (scrollDirection == lib::Direction::dirUp)
