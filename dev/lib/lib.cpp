@@ -41,6 +41,13 @@ namespace lib
         std::cout << name << " failed - (" << code << ")\n";
     }
 
+    // example:
+    //
+    // strSpit("", "\n") -> [""]
+    // strSpit("\n", "\n") -> ["",""]
+    // strSpit("65\n", "\n") -> ["65",""]
+    // strSpit("\n65", "\n") -> ["","65"]
+    // strSpit("65\n65", "\n") -> ["65","65"]
     std::vector<std::string> strSpit(std::string str, std::string delimiter)
     {
         size_t pos = 0;
@@ -48,12 +55,15 @@ namespace lib
 
         while ((pos = str.find(delimiter)) != std::string::npos)
         {
+            // push the string part before delimiter
             tokens.push_back(str.substr(0, pos));
+            // erase the string part before delimiter + delimiter
             str.erase(0, pos + delimiter.length());
         }
 
-        if (!str.empty())
-            tokens.push_back(str);
+        // after there is no delimiter present in string then the erased string is either "" or "%PART_OF_STRING%"
+        // push that string
+        tokens.push_back(str);
 
         return tokens;
     }

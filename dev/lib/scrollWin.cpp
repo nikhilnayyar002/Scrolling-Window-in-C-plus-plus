@@ -44,7 +44,7 @@ namespace scrollWin
         void renderContent();
 
         // add the content from output stream object into lines. Rerender the content inside the window possibly
-        void endLine();
+        void end();
 
         int setActive();
     };
@@ -58,55 +58,75 @@ namespace scrollWin
         topLinePos = 0;
     }
 
-    void SwMain::endLine()
+    void SwMain::end()
     {
         const std::string str = out.str();
         // reset the buffer with set overload of ostringstream::str
         out.str("");
-        // split the strings based on newlines ('\n') in it
-        std::vector<std::string> newlines = lib::strSpit(str, "\n");
 
-        // let \ = \n
-        // string = nikhil\here it is bro
+        // #07111120052021
+        // Concept: lines and parts
         //
-        //      newlines
+        // let \ = newline character (\n) , "" = emty string
+        //
+        // string = nikhil\here it is bro\
+        //
+        //      newLines:
         //           nikhil
         //           here it is bro
-        //
-        //      inner box width padded = 5
-        //
-        //      parts (0 represent border, # represents space added to complete the line width equal to inner box width padded):
-        //
-        //      0nikhi0
-        //      0l####0
-        //      0here#0
-        //      0it is0
-        //      0bro##0
+        //           ""
         //
         // string = \
         //
-        //      newlines
-        //           ''
+        //      newLines
+        //           ""
+        //           ""
         //
-        for (auto &line : newlines)
+
+        // split the strings based on newLines ('\n') in it
+        std::vector<std::string> newLines = lib::strSpit(str, "\n");
+
+        // The first line should be merged with last line (in lines) if possible
+        if (lines.size())
         {
-            // if line is less or same sized as inner padded width of box then push it as line. Also add space if necc.
+            std::string &lastLine = lines.back();
+            std::string &newFirstLine = newLines[0];
+
+            //  let 0 = border
+            //
+            //  0nikhi0  // line1 = nikhi
+            //  0l    0  // lastLine = l
+            //
+            // As one can see the last line can except 4 more charaters to complete the row.
+            int emptySpaceLength = box.innerHorSizePadded - lastLine.length();
+            if (emptySpaceLength)
+            {
+                if (newFirstLine.length() > emptySpaceLength)
+                {
+                    lastLine += newFirstLine.substr(0, emptySpaceLength);
+                    // erase the part that is merged with last line
+                    newFirstLine.erase(0, emptySpaceLength);
+                }
+                else
+                {
+                    lastLine += newFirstLine;
+                    // remove the first element from new lines as it has merged fully inside the last line
+                    newLines.erase(newLines.begin());
+                }
+            }
+        }
+
+        // concept of parts is described in above comment #07111120052021
+        for (auto &line : newLines)
+        {
+            // if line is less or same sized as inner padded width of box then push it as line.
             if (line.length() <= box.innerHorSizePadded)
-                lines.push_back(line + std::string(box.innerHorSizePadded - line.length(), ' '));
+                lines.push_back(line);
             // divide the line into parts and push the parts as lines
             else
             {
-                std::vector<std::string> parts = lib::strToEqualSizeParts(line, box.innerHorSizePadded);
-                short lastPartPos = parts.size() - 1;
-
-                // parts before 'last part'
-                for (short i = 0; i < lastPartPos; ++i)
-                    lines.push_back(parts[i]);
-
-                // last part: its special bcz we may need to add space to it.
-
-                std::string &lastPart = parts[lastPartPos];
-                lines.push_back(lastPart + std::string(box.innerHorSizePadded - lastPart.length(), ' '));
+                for (auto &part : lib::strToEqualSizeParts(line, box.innerHorSizePadded))
+                    lines.push_back(part);
             }
         }
 
@@ -130,8 +150,11 @@ namespace scrollWin
         while (y <= yBottom && pos != linesSize)
         {
             winConio::gotoxy(x, y, box.hOut);
-            std::cout << lines[pos++];
+            // print the line. If it does not fill the row then print spaces to fill the row
+            // printing spaces ensures any old content previously rendered in a row is cleared
+            std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
             ++y;
+            ++pos;
         }
     }
 

@@ -17,14 +17,13 @@ int main()
 
     sWMain.out << "Hi:" << '\n';
     sWMain.out << "This:" << '\n';
-    sWMain.out << "this output breaks to next line since it overflowed.";
-    sWMain.out << "\n6666666666666666999999999999999";
-    sWMain.endLine();
+    sWMain.out << "\n66666";
+    sWMain.end();
     sWMain.out << "Hi:" << '\n';
     sWMain.out << "This:" << '\n';
     sWMain.out << "this output breaks to next line since it overflowed.";
     sWMain.out << "\n6666666666666666999999999999999";
-    sWMain.endLine();
+    sWMain.end();
 
     sWMain.setActive();
 
