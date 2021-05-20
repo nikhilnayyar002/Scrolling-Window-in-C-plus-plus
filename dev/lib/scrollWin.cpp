@@ -8,9 +8,9 @@
 
 namespace scrollWin
 {
-    class SwMain
+    class SwBase
     {
-
+    protected:
         // box
         box::BoxWithScrollBar box;
 
@@ -32,12 +32,31 @@ namespace scrollWin
             // *********
             maxTopLinePos;
 
+        // the next window that can be made active after making current window inactive
+        SwBase *nextActiveWindow;
+
         void scroll(lib::Direction scrollDirection);
 
     public:
         // output stream object
         std::ostringstream out;
 
+        SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+
+        // render the contents inside the box
+        virtual void renderContent() = 0;
+
+        // add the content from output stream object into lines. After that rerender the lines possibly
+        virtual void end() = 0;
+
+        // set the window as active
+        virtual int setActive() = 0;
+    };
+
+    class SwMain : public SwBase
+    {
+
+    public:
         SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
         // render the contents inside the box
@@ -52,10 +71,44 @@ namespace scrollWin
 
 namespace scrollWin
 {
-    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+    SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
     {
         topLinePos = 0;
+        nextActiveWindow = nullptr;
+    }
+
+    void SwBase::scroll(lib::Direction scrollDirection)
+    {
+        const int noOfLinesToScroll = 1;
+
+        bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
+
+        if (didScrolled)
+        {
+            if (scrollDirection == lib::Direction::dirUp)
+            {
+                topLinePos -= noOfLinesToScroll;
+
+                if (topLinePos < 0)
+                    topLinePos = 0;
+            }
+
+            else if (scrollDirection == lib::Direction::dirDown)
+            {
+                topLinePos += noOfLinesToScroll;
+
+                if (topLinePos > maxTopLinePos)
+                    topLinePos = maxTopLinePos;
+            }
+
+            renderContent();
+        }
+    }
+
+    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    {
     }
 
     void SwMain::end()
@@ -155,34 +208,6 @@ namespace scrollWin
             std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
             ++y;
             ++pos;
-        }
-    }
-
-    void SwMain::scroll(lib::Direction scrollDirection)
-    {
-        const int noOfLinesToScroll = 1;
-
-        bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
-
-        if (didScrolled)
-        {
-            if (scrollDirection == lib::Direction::dirUp)
-            {
-                topLinePos -= noOfLinesToScroll;
-
-                if (topLinePos < 0)
-                    topLinePos = 0;
-            }
-
-            else if (scrollDirection == lib::Direction::dirDown)
-            {
-                topLinePos += noOfLinesToScroll;
-
-                if (topLinePos > maxTopLinePos)
-                    topLinePos = maxTopLinePos;
-            }
-
-            renderContent();
         }
     }
 
