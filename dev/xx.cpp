@@ -25,7 +25,7 @@ int main()
     sWMain1.out << "\n6666666666666666999999999999999";
     sWMain1.end();
 
-    scrollWin::SwMain sWMain2(0 + 25, 0, 15 + 25, 15, "Window", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwMain sWMain2(0 + 25, 0, 15 + 35, 15, "Window2", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
 
     sWMain2.out << "Hi:" << '\n';
     sWMain2.out << "This:" << '\n';
@@ -33,8 +33,7 @@ int main()
     sWMain2.end();
     sWMain2.out << "Hi:" << '\n';
     sWMain2.out << "This:" << '\n';
-    sWMain2.out << "this output breaks to next line since it overflowed.";
-    sWMain2.out << "\n6666666666666666999999999999999";
+    sWMain2.out << scrollWin::filterTextOutput1(sWMain2.getInnerHorSize(), "Address", "D/90/B, Janak Puri, New Delhi, Delhi, 110059");
     sWMain2.end();
 
     sWMain1.setNextActiveWindow(sWMain2);

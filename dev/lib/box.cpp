@@ -18,9 +18,12 @@ namespace scrollWin
 
 namespace box
 {
-    const short MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL = 1, SCROLL_BUTTON_HEIGHT = 1, BORDER_WIDTH = 1;
+    const short SCROLL_BOX_SCROLL_THUMB_MAX_UNIT_DISTANCE_TRAVERSAL = 1,
+                SCROLL_BOX_SCROLL_BUTTON_HEIGHT = 1,
+                SCROLL_BOX_SCROLL_THUMB_MIN_HEIGHT = 1,
+                SCROLL_BOX_DEFAULT_TOP_LINE_POS = 0;
 
-    const short BOX_BORDER_HIGHLIGHTED_COLOR = winConio::YELLOW;
+    const short BOX_BORDER_HIGHLIGHTED_COLOR = winConio::YELLOW, BOX_BORDER_WIDTH = 1;
 
     // padding inside box (>=0)
     //
@@ -54,7 +57,7 @@ namespace box
     // 000000000000
     const short BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE = 1;
 
-    const short MAX_BOX_DOTS_IN_RENDERED_TITLE = 2;
+    const short BOX_MAX_DOTS_IN_RENDERED_TITLE = 2;
 
     class Box
     {
@@ -119,22 +122,23 @@ namespace box
         // scrollbar
 
         bool hasScrollBar;
-        short scrollThumbHeight;
-        float scrollThumbPos;
-        short scrollBarHeight;
+        short scrollThumbHeight, scrollBarTrackHeight;
+
         // how much to move the scrollThumb (at minimum) up/down.
         // Value should be in range: (0,1] bcz it is calculated as: (scrollBarHeight - scrollThumbHeight) / linesNotRendered
         float scrollThumbUnitDistanceTraversal;
 
         // lines
 
-        int noOfLines, // the no of lines affect the scrollbar.
-            linesNotRendered;
+        int noOfLines,        // the total no of lines (rendered + not rendered)
+            topLineIndex,     // the line which is rendered currently in starting position
+            linesNotRendered; // lines not rendered currently in box
 
         // render methods
 
         void renderVerBorder(lib::Position pc);
         void reRenderScrollbar();
+        void reset(int noOfLines);
 
     public:
         BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
@@ -215,11 +219,11 @@ namespace box
         //      nikhil
         if (!maxLengthOfRenderedTitle)
             renderedTitle = "";
-        else if (maxLengthOfRenderedTitle <= MAX_BOX_DOTS_IN_RENDERED_TITLE)
+        else if (maxLengthOfRenderedTitle <= BOX_MAX_DOTS_IN_RENDERED_TITLE)
             renderedTitle = std::string(maxLengthOfRenderedTitle, '.');
         else if (title.length() > maxLengthOfRenderedTitle)
         {
-            std::string dots = std::string(MAX_BOX_DOTS_IN_RENDERED_TITLE, '.');
+            std::string dots = std::string(BOX_MAX_DOTS_IN_RENDERED_TITLE, '.');
             renderedTitle = title.substr(0, maxLengthOfRenderedTitle - dots.length());
             renderedTitle += dots;
         }
@@ -234,15 +238,15 @@ namespace box
         Box::x2 = x2;
         Box::y2 = y2;
 
-        horSize = x2 - x1 + BORDER_WIDTH;
-        verSize = y2 - y1 + BORDER_WIDTH;
+        horSize = x2 - x1 + BOX_BORDER_WIDTH;
+        verSize = y2 - y1 + BOX_BORDER_WIDTH;
 
         // inner
 
-        innerHorSize = x2 - x1 - BORDER_WIDTH;
-        innerVerSize = y2 - y1 - BORDER_WIDTH;
-        innerTopLeftCoord = {short(x1 + BORDER_WIDTH), short(y1 + BORDER_WIDTH)};
-        innerBottomRightCoord = {short(x2 - BORDER_WIDTH), short(y2 - BORDER_WIDTH)};
+        innerHorSize = x2 - x1 - BOX_BORDER_WIDTH;
+        innerVerSize = y2 - y1 - BOX_BORDER_WIDTH;
+        innerTopLeftCoord = {short(x1 + BOX_BORDER_WIDTH), short(y1 + BOX_BORDER_WIDTH)};
+        innerBottomRightCoord = {short(x2 - BOX_BORDER_WIDTH), short(y2 - BOX_BORDER_WIDTH)};
 
         // padding
         {
@@ -333,21 +337,24 @@ namespace box
     BoxWithScrollBar::BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : Box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
     {
-        // scrollbar
-        {
-            if (padding)
-                scrollBarHeight = innerVerSizePadded;
-            else
-                scrollBarHeight = innerVerSizePadded - 2 * SCROLL_BUTTON_HEIGHT; // when there is no padding (>=1) the space for scroll Button Top and Bottom should be subtracted
+        scrollBarTrackHeight = innerVerSize - 2 * SCROLL_BOX_SCROLL_BUTTON_HEIGHT; // the space for scroll Button Top and Bottom should be subtracted
 
-            scrollThumbHeight = scrollThumbPos = 0;
-            scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
-            hasScrollBar = false;
-        }
+        reset(0);
+    }
+
+    void BoxWithScrollBar::reset(int noOfLines)
+    {
+        // scrollbar
+
+        scrollThumbHeight = scrollBarTrackHeight;
+        scrollThumbUnitDistanceTraversal = SCROLL_BOX_SCROLL_THUMB_MAX_UNIT_DISTANCE_TRAVERSAL;
+        hasScrollBar = false;
 
         // lines
 
-        noOfLines = linesNotRendered = 0;
+        BoxWithScrollBar::noOfLines = noOfLines;
+        linesNotRendered = 0;
+        topLineIndex = SCROLL_BOX_DEFAULT_TOP_LINE_POS;
     }
 
     void BoxWithScrollBar::renderVerBorder(lib::Position pc)
@@ -357,15 +364,17 @@ namespace box
             const short x = x2;
             short y = y1;
 
-            int _scrollThumbPos = int(scrollThumbPos);
+            int scrollThumbOffset = round(topLineIndex * scrollThumbUnitDistanceTraversal);
 
             //  create vertical scroll output string
 
-            std::string temp(SCROLL_BUTTON_HEIGHT, _scrollThumbPos == 0 ? lib::Chars::borderVertical : lib::Chars::scrollButtonTop);                                            // top botton
-            temp += std::string(_scrollThumbPos, lib::Chars::scrollBar);                                                                                                        // scrollBar without thumb
-            temp += std::string(scrollThumbHeight, lib::Chars::scrollBarThumb);                                                                                                 // scrollBarThumb
-            temp += std::string(innerVerSize - (temp.length() + SCROLL_BUTTON_HEIGHT), lib::Chars::scrollBar);                                                                  // scrollBar without thumb
-            temp += std::string(SCROLL_BUTTON_HEIGHT, (_scrollThumbPos + scrollThumbHeight) == innerVerSizePadded ? lib::Chars::borderVertical : lib::Chars::scrollButtonDown); // bottom botton
+            std::string temp(SCROLL_BOX_SCROLL_BUTTON_HEIGHT, topLineIndex > 0 ? lib::Chars::scrollButtonTop : lib::Chars::borderVertical); // top botton
+            
+            temp += std::string(scrollThumbOffset, lib::Chars::scrollBar);                                              // scrollBar without thumb
+            temp += std::string(scrollThumbHeight, lib::Chars::scrollBarThumb);                                         // scrollBarThumb
+            temp += std::string(scrollBarTrackHeight - (scrollThumbOffset + scrollThumbHeight), lib::Chars::scrollBar); // scrollBar without thumb
+
+            temp += std::string(SCROLL_BOX_SCROLL_BUTTON_HEIGHT, topLineIndex != linesNotRendered ? lib::Chars::scrollButtonDown : lib::Chars::borderVertical); // bottom botton
 
             // render the scrollbar
 
@@ -392,29 +401,31 @@ namespace box
 
     void BoxWithScrollBar::setNoOfLines(int n)
     {
-        noOfLines = n;
+        if (n < 0)
+            throw std::runtime_error("BoxWithScrollBar::setNoOfLines, noOfLines >= 0");
 
-        // scrollbat functionality
+        // scrollbar functionality
         {
-            if (noOfLines > innerVerSizePadded)
+            if (n > innerVerSizePadded)
             {
+                noOfLines = n;
                 hasScrollBar = true;
                 linesNotRendered = noOfLines - innerVerSizePadded; // > 0
 
-                if (linesNotRendered < scrollBarHeight)
+                if (linesNotRendered < scrollBarTrackHeight)
                 {
-                    scrollThumbHeight = scrollBarHeight - linesNotRendered;
-                    scrollThumbUnitDistanceTraversal = MAX_SCROLL_THUMB_UNIT_DISTANCE_TRAVERSAL;
+                    scrollThumbHeight = scrollBarTrackHeight - linesNotRendered;
+                    scrollThumbUnitDistanceTraversal = SCROLL_BOX_SCROLL_THUMB_MAX_UNIT_DISTANCE_TRAVERSAL;
                 }
                 else
                 {
-                    scrollThumbHeight = 1;
-                    // remaining steps in scrollbar / linesNotRendered
-                    scrollThumbUnitDistanceTraversal = (scrollBarHeight - scrollThumbHeight) / linesNotRendered;
+                    scrollThumbHeight = SCROLL_BOX_SCROLL_THUMB_MIN_HEIGHT;
+                    // // (length where thumb can move within - height of thumb) / lines not rendered
+                    scrollThumbUnitDistanceTraversal = (scrollBarTrackHeight - scrollThumbHeight) / linesNotRendered;
                 }
             }
             else
-                hasScrollBar = false;
+                reset(n);
         }
 
         reRenderScrollbar();
@@ -422,25 +433,30 @@ namespace box
 
     bool BoxWithScrollBar::scroll(lib::Direction scrollDirection, int noOfLines = 1)
     {
-        int _scrollThumbPos = int(scrollThumbPos);
         bool canScroll = false;
 
-        if (scrollDirection == lib::Direction::dirUp && _scrollThumbPos != 0)
+        // add here code for hasScrollbar
+
+        if (scrollDirection == lib::Direction::dirUp && topLineIndex > 0)
         {
-            float val = scrollThumbUnitDistanceTraversal * noOfLines;
-            scrollThumbPos -= val < 0 ? 0 : val;
+            int newtopLineIndex = topLineIndex - noOfLines;
+
+            if (newtopLineIndex < 0)
+                topLineIndex = 0;
+            else
+                topLineIndex = newtopLineIndex;
+
             canScroll = true;
         }
 
-        else if (scrollDirection == lib::Direction::dirDown && (_scrollThumbPos + scrollThumbHeight) != innerVerSizePadded)
+        else if (scrollDirection == lib::Direction::dirDown && topLineIndex != linesNotRendered)
         {
-            float val = scrollThumbUnitDistanceTraversal * noOfLines;
-            int _newScrollThumbPos = int(scrollThumbPos + val);
+            int newtopLineIndex = topLineIndex + noOfLines;
 
-            if ((_newScrollThumbPos + scrollThumbHeight) > innerVerSizePadded)
-                scrollThumbPos = innerVerSizePadded;
+            if (newtopLineIndex > linesNotRendered)
+                topLineIndex = linesNotRendered;
             else
-                scrollThumbPos += val;
+                topLineIndex = newtopLineIndex;
 
             canScroll = true;
         }

@@ -17,20 +17,6 @@ namespace scrollWin
         // lines
 
         std::vector<std::string> lines;
-        int topLinePos,
-
-            // example:
-            // lines = 5
-            // content width = 3
-            // :. max topLinePos will be 5 - 3 = 2
-            //
-            //           0
-            // ********* 1
-            // *       * 2
-            // *       * 3
-            // *       * 4
-            // *********
-            maxTopLinePos;
 
         // the next window that can be made active after making current window inactive
         SwBase *nextActiveWindow;
@@ -45,6 +31,11 @@ namespace scrollWin
 
         void setNextActiveWindow(SwBase &ref) { nextActiveWindow = &ref; }
         SwBase *getNextActiveWindow() { return nextActiveWindow; }
+
+        // return box parameters
+
+        int getInnerHorSize() { return box.innerHorSizePadded; }
+        int getInnerVerSize() { return box.innerVerSizePadded; }
 
         // render the contents inside the box
         virtual void renderContent() = 0;
@@ -74,26 +65,30 @@ namespace scrollWin
     // this recipe when called allows switching between windows using tab key. Also if escape is pressed in a window it will break
     // out of while loop and give back control to the caller function (the one who called it)
     // pass the a window to set it as active initially.
-    void windowsRecipe1(SwBase &initialActiveWindow)
-    {
-        SwBase *activeWindow = &initialActiveWindow;
+    void windowsRecipe1(SwBase &initialActiveWindow);
 
-        while (true)
-        {
-            int p = activeWindow->setActive();
-
-            // if horizontal tab is pressed switch to next active window
-            if (p == lib::Chars::horizontalTab)
-            {
-                scrollWin::SwBase *nextActiveWindow = activeWindow->getNextActiveWindow();
-                if (nextActiveWindow)
-                    activeWindow = nextActiveWindow;
-            }
-            // if escape is pressed then break out
-            else if (p == lib::Chars::escape)
-                break;
-        }
-    }
+    // Example: you are getting output as:
+    //
+    //    0 Name: Nikhil Nayyar          0
+    //    0 Address: D/90/B, Janak Puri, 0
+    //    0 New Delhi, Delhi, 110059     0
+    //    0 DOB:2nd September 1999       0
+    //
+    // And you want to display it as (see the address part):
+    //
+    //    0 Name: Nikhil Nayyar          0
+    //    0 Address: D/90/B, Janak Puri, 0
+    //    0          New Delhi, Delhi,   0
+    //    0          110059              0
+    //    0 DOB:2nd September 1999       0
+    //
+    // To do that call the function with boxWidth, key, value
+    //
+    //  boxWidth = width of box
+    //  key = Address
+    //  value =  D/90/B, Janak Puri, New Delhi, Delhi, 110059
+    //
+    std::string filterTextOutput1(int width, std::string key, std::string value);
 }
 
 namespace scrollWin
@@ -101,7 +96,6 @@ namespace scrollWin
     SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
     {
-        topLinePos = 0;
         nextActiveWindow = nullptr;
     }
 
@@ -112,25 +106,7 @@ namespace scrollWin
         bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
 
         if (didScrolled)
-        {
-            if (scrollDirection == lib::Direction::dirUp)
-            {
-                topLinePos -= noOfLinesToScroll;
-
-                if (topLinePos < 0)
-                    topLinePos = 0;
-            }
-
-            else if (scrollDirection == lib::Direction::dirDown)
-            {
-                topLinePos += noOfLinesToScroll;
-
-                if (topLinePos > maxTopLinePos)
-                    topLinePos = maxTopLinePos;
-            }
-
             renderContent();
-        }
     }
 
     SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
@@ -210,8 +186,6 @@ namespace scrollWin
             }
         }
 
-        maxTopLinePos = lines.size() - box.innerVerSizePadded;
-
         box.setNoOfLines(lines.size());
         renderContent();
     }
@@ -222,19 +196,28 @@ namespace scrollWin
         short y = box.innerTopLeftCoordPadded.Y;
         const short yBottom = box.innerBottomRightCoordPadded.Y;
 
-        int pos = topLinePos, linesSize = lines.size();
+        int pos = box.topLineIndex, linesSize = lines.size();
 
         winConio::setTextAndBackgroundColor(box.textColor, box.backgroundColor, box.hOut);
 
-        // render till y reaches yBottom and also lines are available to render
-        while (y <= yBottom && pos != linesSize)
+        while (y <= yBottom)
         {
             winConio::gotoxy(x, y, box.hOut);
-            // print the line. If it does not fill the row then print spaces to fill the row
-            // printing spaces ensures any old content previously rendered in a row is cleared
-            std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
+
+            // lines are available to render
+            if (pos != linesSize)
+            {
+                // print the line. If it does not fill the row then print spaces to fill the row
+                // printing spaces ensures any old content previously rendered in a row is cleared
+                std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
+                ++pos;
+            }
+
+            // print empty line
+            else
+                std::cout << std::string(box.innerHorSizePadded, ' ');
+
             ++y;
-            ++pos;
         }
     }
 
@@ -267,5 +250,76 @@ namespace scrollWin
                 return pressedKey;
             }
         }
+    }
+
+    void windowsRecipe1(SwBase &initialActiveWindow)
+    {
+        SwBase *activeWindow = &initialActiveWindow;
+
+        while (true)
+        {
+            int p = activeWindow->setActive();
+
+            // if horizontal tab is pressed switch to next active window
+            if (p == lib::Chars::horizontalTab)
+            {
+                scrollWin::SwBase *nextActiveWindow = activeWindow->getNextActiveWindow();
+                if (nextActiveWindow)
+                    activeWindow = nextActiveWindow;
+            }
+            // if escape is pressed then break out
+            else if (p == lib::Chars::escape)
+                break;
+        }
+    }
+
+    std::string filterTextOutput1(int width, std::string key, std::string value)
+    {
+        key += ": ";
+
+        int offsetWidth, widthAfterOffset;
+
+        if (key.length() > width)
+        {
+            std::string lastPart = lib::strToEqualSizeParts(key, width).back();
+
+            offsetWidth = lastPart.length();
+            widthAfterOffset = width - offsetWidth;
+        }
+        else
+        {
+            offsetWidth = key.length();
+            widthAfterOffset = width - offsetWidth;
+        }
+
+        if (widthAfterOffset == 0)
+        {
+            offsetWidth = 0;
+            widthAfterOffset = width - offsetWidth;
+        }
+
+        if (value.length() > widthAfterOffset)
+        {
+            key += value.substr(0, widthAfterOffset);
+            value.erase(0, widthAfterOffset);
+
+            while (value.length())
+            {
+                key += std::string(offsetWidth, ' ');
+
+                if (value.length() > widthAfterOffset)
+                {
+                    key += value.substr(0, widthAfterOffset);
+                    value.erase(0, widthAfterOffset);
+                }
+                else
+                {
+                    key += value;
+                    break;
+                }
+            }
+        }
+
+        return key;
     }
 }
