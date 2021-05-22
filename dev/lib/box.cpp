@@ -369,7 +369,7 @@ namespace box
             //  create vertical scroll output string
 
             std::string temp(SCROLL_BOX_SCROLL_BUTTON_HEIGHT, topLineIndex > 0 ? lib::Chars::scrollButtonTop : lib::Chars::borderVertical); // top botton
-            
+
             temp += std::string(scrollThumbOffset, lib::Chars::scrollBar);                                              // scrollBar without thumb
             temp += std::string(scrollThumbHeight, lib::Chars::scrollBarThumb);                                         // scrollBarThumb
             temp += std::string(scrollBarTrackHeight - (scrollThumbOffset + scrollThumbHeight), lib::Chars::scrollBar); // scrollBar without thumb
@@ -433,9 +433,10 @@ namespace box
 
     bool BoxWithScrollBar::scroll(lib::Direction scrollDirection, int noOfLines = 1)
     {
-        bool canScroll = false;
+        if (!hasScrollBar)
+            return false;
 
-        // add here code for hasScrollbar
+        bool canScroll = false;
 
         if (scrollDirection == lib::Direction::dirUp && topLineIndex > 0)
         {

@@ -21,13 +21,12 @@ namespace scrollWin
         // the next window that can be made active after making current window inactive
         SwBase *nextActiveWindow;
 
-        void scroll(lib::Direction scrollDirection);
+        void scroll(lib::Direction scrollDirection, int noOfLinesToScroll);
 
     public:
-        // output stream object
-        std::ostringstream out;
-
         SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+
+        //
 
         void setNextActiveWindow(SwBase &ref) { nextActiveWindow = &ref; }
         SwBase *getNextActiveWindow() { return nextActiveWindow; }
@@ -51,14 +50,34 @@ namespace scrollWin
     {
 
     public:
+        // output stream object
+        std::ostringstream out;
+
         SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
-        // render the contents inside the box
+        // virtual functions
+
         void renderContent();
-
-        // add the content from output stream object into lines. Rerender the content inside the window possibly
         void end();
+        int setActive();
+    };
 
+    class SwSelec : public SwBase
+    {
+        // options
+        // option first value : index of first line in option
+        // option second value : no of lines an option span within box
+
+        pair<short, short> selectedOption;
+        vector<pair<short, short>> options;
+
+    public:
+        SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+
+        // virtual functions
+
+        void renderContent();
+        void end();
         int setActive();
     };
 
@@ -94,15 +113,13 @@ namespace scrollWin
 namespace scrollWin
 {
     SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
+        : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
     {
         nextActiveWindow = nullptr;
     }
 
-    void SwBase::scroll(lib::Direction scrollDirection)
+    void SwBase::scroll(lib::Direction scrollDirection, int noOfLinesToScroll)
     {
-        const int noOfLinesToScroll = 1;
-
         bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
 
         if (didScrolled)
@@ -110,7 +127,7 @@ namespace scrollWin
     }
 
     SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
     {
     }
 
@@ -239,9 +256,9 @@ namespace scrollWin
                 pressedKey = winConio::getch();
 
                 if (pressedKey == SPECIAL_ARROW_UP)
-                    scroll(lib::Direction::dirUp);
+                    scroll(lib::Direction::dirUp, 1);
                 else if (pressedKey == SPECIAL_ARROW_DOWN)
-                    scroll(lib::Direction::dirDown);
+                    scroll(lib::Direction::dirDown, 1);
             }
             // return pressed key
             else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
