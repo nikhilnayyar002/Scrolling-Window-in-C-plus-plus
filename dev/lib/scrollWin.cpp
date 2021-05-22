@@ -8,6 +8,8 @@
 
 namespace scrollWin
 {
+    const short SWSELEC_DEFAULT_SELECTED_OPTION_COLOR = winConio::RED;
+
     class SwBase
     {
     protected:
@@ -21,7 +23,22 @@ namespace scrollWin
         // the next window that can be made active after making current window inactive
         SwBase *nextActiveWindow;
 
-        void scroll(lib::Direction scrollDirection, int noOfLinesToScroll);
+        // common code that will be called within setActive member function
+        // will return 0:
+        //  1. if it cannot do anything related to pressed key
+        //  2. it did something related to pressed key for internal changes (scroll contents etc)
+        //
+        // will return non-zero value if key pressed has some special meaning like ESC, TAB and requires external logic (switch windows etc)
+        //
+        int setActiveCommon(int pressedKey);
+
+        // add the content of string into lines.
+        void _end(std::string str);
+
+        virtual void scroll(lib::Direction scrollDirection) = 0;
+
+        // render the contents inside the box
+        virtual void renderContent() = 0;
 
     public:
         SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
@@ -36,10 +53,7 @@ namespace scrollWin
         int getInnerHorSize() { return box.innerHorSizePadded; }
         int getInnerVerSize() { return box.innerVerSizePadded; }
 
-        // render the contents inside the box
-        virtual void renderContent() = 0;
-
-        // add the content from output stream object into lines. After that rerender the lines possibly
+        // calls _end function. It can do extra logic before calling it.
         virtual void end() = 0;
 
         // set the window as active
@@ -48,6 +62,10 @@ namespace scrollWin
 
     class SwMain : public SwBase
     {
+        // virtual functions
+
+        void scroll(lib::Direction scrollDirection);
+        void renderContent();
 
     public:
         // output stream object
@@ -57,26 +75,43 @@ namespace scrollWin
 
         // virtual functions
 
-        void renderContent();
         void end();
         int setActive();
     };
 
+    struct SwSelecOption
+    {
+        std::string optionName;        // name of option
+        void (*onOptionSelected)(int); // callback to call when option is selected by enter key
+    };
+
     class SwSelec : public SwBase
     {
-        // options
-        // option first value : index of first line in option
-        // option second value : no of lines an option span within box
+        struct Option
+        {
+            int index;                     // index of first line in option
+            int linesSpanned;              //  no of lines an option span within box
+            void (*onOptionSelected)(int); // callback to call when option is selected by enter key
+        };
 
-        pair<short, short> selectedOption;
-        vector<pair<short, short>> options;
+        Option selectedOption;
+        std::vector<Option> options;
+
+        short selectedOptionIndex;
+        short selectedOptionColor;
+
+        // virtual functions
+
+        void scroll(lib::Direction scrollDirection);
+        void renderContent();
 
     public:
         SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
+        void addOptions(std::vector<SwSelecOption> &swSelecOptions);
+
         // virtual functions
 
-        void renderContent();
         void end();
         int setActive();
     };
@@ -86,6 +121,8 @@ namespace scrollWin
     // pass the a window to set it as active initially.
     void windowsRecipe1(SwBase &initialActiveWindow);
 
+    // return pair of string and the no of lines it will span in box.
+    //
     // Example: you are getting output as:
     //
     //    0 Name: Nikhil Nayyar          0
@@ -107,7 +144,7 @@ namespace scrollWin
     //  key = Address
     //  value =  D/90/B, Janak Puri, New Delhi, Delhi, 110059
     //
-    std::string filterTextOutput1(int width, std::string key, std::string value);
+    std::pair<std::string, int> filterTextOutput1(int width, std::string key, std::string value);
 }
 
 namespace scrollWin
@@ -118,25 +155,8 @@ namespace scrollWin
         nextActiveWindow = nullptr;
     }
 
-    void SwBase::scroll(lib::Direction scrollDirection, int noOfLinesToScroll)
+    void SwBase::_end(std::string str)
     {
-        bool didScrolled = box.scroll(scrollDirection, noOfLinesToScroll);
-
-        if (didScrolled)
-            renderContent();
-    }
-
-    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
-    {
-    }
-
-    void SwMain::end()
-    {
-        const std::string str = out.str();
-        // reset the buffer with set overload of ostringstream::str
-        out.str("");
-
         // #07111120052021
         // Concept: lines and parts
         //
@@ -202,6 +222,48 @@ namespace scrollWin
                     lines.push_back(part);
             }
         }
+    }
+
+    int SwBase::setActiveCommon(int pressedKey)
+    {
+        // When reading keys with conio and getch, in order to be able to handle special keys (arrow keys, function keys)
+        // while still fitting its return value in a char, getch returns special keys as two-char sequences.
+        // The first call returns 224, while the second call returns the code of the special key.
+        if (pressedKey == 224)
+        {
+            const char SPECIAL_ARROW_UP = 72, SPECIAL_ARROW_DOWN = 80;
+            // second call
+            pressedKey = winConio::getch();
+
+            if (pressedKey == SPECIAL_ARROW_UP)
+                scroll(lib::Direction::dirUp);
+            else if (pressedKey == SPECIAL_ARROW_DOWN)
+                scroll(lib::Direction::dirDown);
+
+            return 0;
+        }
+        // return pressed key
+        else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
+        {
+            box.setFocus(false);
+            return pressedKey;
+        }
+        else
+            return 0;
+    }
+
+    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
+    {
+    }
+
+    void SwMain::end()
+    {
+        const std::string str = out.str();
+        // reset the buffer with set overload of ostringstream::str
+        out.str("");
+
+        _end(str);
 
         box.setNoOfLines(lines.size());
         renderContent();
@@ -229,7 +291,6 @@ namespace scrollWin
                 std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
                 ++pos;
             }
-
             // print empty line
             else
                 std::cout << std::string(box.innerHorSizePadded, ' ');
@@ -246,27 +307,217 @@ namespace scrollWin
         {
             int pressedKey = winConio::getch();
 
-            // When reading keys with conio and getch, in order to be able to handle special keys (arrow keys, function keys)
-            // while still fitting its return value in a char, getch returns special keys as two-char sequences.
-            // The first call returns 224, while the second call returns the code of the special key.
-            if (pressedKey == 224)
-            {
-                const char SPECIAL_ARROW_UP = 72, SPECIAL_ARROW_DOWN = 80;
-                // second call
-                pressedKey = winConio::getch();
+            int returnedValue = setActiveCommon(pressedKey);
 
-                if (pressedKey == SPECIAL_ARROW_UP)
-                    scroll(lib::Direction::dirUp, 1);
-                else if (pressedKey == SPECIAL_ARROW_DOWN)
-                    scroll(lib::Direction::dirDown, 1);
-            }
-            // return pressed key
-            else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
+            if (returnedValue)
+                return returnedValue;
+        }
+    }
+
+    void SwMain::scroll(lib::Direction scrollDirection)
+    {
+        bool didScrolled = box.scroll(scrollDirection, 1);
+
+        if (didScrolled)
+            renderContent();
+    };
+
+    SwSelec::SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    {
+        selectedOptionColor = SWSELEC_DEFAULT_SELECTED_OPTION_COLOR;
+        selectedOptionIndex = -1;
+    }
+
+    void SwSelec::addOptions(std::vector<SwSelecOption> &swSelecOptions)
+    {
+        if (swSelecOptions.size())
+        {
+            int newOptionNo = options.size() ? (options.size() + 1) : 1;
+            int indexOfFirstLineInNewOption = lines.size() ? (lines.size() - 1) : 0;
+
+            for (auto &swOption : swSelecOptions)
             {
-                box.setFocus(false);
-                return pressedKey;
+                std::pair<std::string, int> filteredStr = filterTextOutput1(box.innerHorSizePadded, "" + std::to_string(newOptionNo), swOption.optionName);
+                _end(filteredStr.first + "\n");
+
+                Option newOption = {indexOfFirstLineInNewOption, filteredStr.second, swOption.onOptionSelected};
+                options.push_back(newOption);
+
+                ++newOptionNo;
+                indexOfFirstLineInNewOption += filteredStr.second;
+            }
+
+            // remove the last empty string created because of splitting newline in last option
+            lines.pop_back();
+
+            if (selectedOptionIndex == -1)
+            {
+                selectedOption = options[0];
+                selectedOptionIndex = 0;
+            }
+
+            box.setNoOfLines(lines.size());
+            renderContent();
+        }
+    }
+
+    void SwSelec::end()
+    {
+    }
+
+    void SwSelec::renderContent()
+    {
+        const short x = box.innerTopLeftCoordPadded.X;
+        short y = box.innerTopLeftCoordPadded.Y;
+        const short yBottom = box.innerBottomRightCoordPadded.Y;
+
+        int pos = box.topLineIndex, linesSize = lines.size();
+
+        winConio::setTextAndBackgroundColor(box.textColor, box.backgroundColor, box.hOut);
+
+        while (y <= yBottom)
+        {
+            winConio::gotoxy(x, y, box.hOut);
+
+            // lines are available to render
+            if (pos != linesSize)
+            {
+                if (pos == selectedOption.index)
+                {
+                    int i = 0;
+                    winConio::setTextAndBackgroundColor(box.textColor, selectedOptionColor, box.hOut);
+
+                    // print highlighted option
+                    while (i < selectedOption.linesSpanned && y <= yBottom)
+                    {
+                        winConio::gotoxy(x, y, box.hOut);
+                        std::cout << lines[pos + i] << std::string(box.innerHorSizePadded - lines[pos + i].length(), ' ');
+                        ++i;
+                        ++y;
+                    }
+
+                    pos += i;                                                                          // skip the painted lines
+                    winConio::setTextAndBackgroundColor(box.textColor, box.backgroundColor, box.hOut); // reset background color
+                }
+                else
+                {
+                    std::cout << lines[pos] << std::string(box.innerHorSizePadded - lines[pos].length(), ' ');
+                    ++pos;
+                    ++y;
+                }
+            }
+            // print empty line
+            else
+            {
+                std::cout << std::string(box.innerHorSizePadded, ' ');
+                ++y;
             }
         }
+    }
+
+    void SwSelec::scroll(lib::Direction scrollDirection)
+    {
+        int noOfLinesToScroll = 0;
+
+        if (scrollDirection == lib::Direction::dirUp && selectedOptionIndex > 0)
+        {
+            --selectedOptionIndex;
+            selectedOption = options[selectedOptionIndex];
+            noOfLinesToScroll = selectedOption.linesSpanned;
+        }
+        else if (scrollDirection == lib::Direction::dirDown && selectedOptionIndex != (options.size() - 1))
+        {
+            ++selectedOptionIndex;
+            noOfLinesToScroll = selectedOption.linesSpanned;
+            selectedOption = options[selectedOptionIndex];
+        }
+
+        if (noOfLinesToScroll)
+        {
+            box.scroll(scrollDirection, noOfLinesToScroll);
+            renderContent();
+        }
+    };
+
+    int SwSelec::setActive()
+    {
+        box.setFocus(true);
+
+        while (true)
+        {
+            int pressedKey = winConio::getch();
+
+            // enter key is pressed
+            if (pressedKey == lib::Chars::carriageReturn && selectedOption.index > -1 && selectedOption.onOptionSelected)
+                selectedOption.onOptionSelected(selectedOptionIndex + 1);
+
+            int returnedValue = setActiveCommon(pressedKey);
+
+            if (returnedValue)
+                return returnedValue;
+        }
+    }
+
+    std::pair<std::string, int> filterTextOutput1(int width, std::string key, std::string value)
+    {
+        key += ": ";
+
+        int offsetWidth, widthAfterOffset;
+
+        int noOfLines = 0;
+
+        if (key.length() > width)
+        {
+            const std::vector<std::string> parts = lib::strToEqualSizeParts(key, width);
+            std::string lastPart = parts.back();
+
+            noOfLines = parts.size();
+
+            offsetWidth = lastPart.length();
+            widthAfterOffset = width - offsetWidth;
+        }
+        else
+        {
+            noOfLines = 1;
+
+            offsetWidth = key.length();
+            widthAfterOffset = width - offsetWidth;
+        }
+
+        if (widthAfterOffset == 0)
+        {
+            offsetWidth = 0;
+            widthAfterOffset = width - offsetWidth;
+        }
+
+        if (value.length() <= widthAfterOffset)
+            key += value;
+        else
+        {
+            key += value.substr(0, widthAfterOffset);
+            value.erase(0, widthAfterOffset);
+            noOfLines += 1;
+
+            while (value.length())
+            {
+                key += std::string(offsetWidth, ' ');
+
+                if (value.length() > widthAfterOffset)
+                {
+                    key += value.substr(0, widthAfterOffset);
+                    value.erase(0, widthAfterOffset);
+                    ++noOfLines;
+                }
+                else
+                {
+                    key += value;
+                    break;
+                }
+            }
+        }
+
+        return {key, noOfLines};
     }
 
     void windowsRecipe1(SwBase &initialActiveWindow)
@@ -288,55 +539,5 @@ namespace scrollWin
             else if (p == lib::Chars::escape)
                 break;
         }
-    }
-
-    std::string filterTextOutput1(int width, std::string key, std::string value)
-    {
-        key += ": ";
-
-        int offsetWidth, widthAfterOffset;
-
-        if (key.length() > width)
-        {
-            std::string lastPart = lib::strToEqualSizeParts(key, width).back();
-
-            offsetWidth = lastPart.length();
-            widthAfterOffset = width - offsetWidth;
-        }
-        else
-        {
-            offsetWidth = key.length();
-            widthAfterOffset = width - offsetWidth;
-        }
-
-        if (widthAfterOffset == 0)
-        {
-            offsetWidth = 0;
-            widthAfterOffset = width - offsetWidth;
-        }
-
-        if (value.length() > widthAfterOffset)
-        {
-            key += value.substr(0, widthAfterOffset);
-            value.erase(0, widthAfterOffset);
-
-            while (value.length())
-            {
-                key += std::string(offsetWidth, ' ');
-
-                if (value.length() > widthAfterOffset)
-                {
-                    key += value.substr(0, widthAfterOffset);
-                    value.erase(0, widthAfterOffset);
-                }
-                else
-                {
-                    key += value;
-                    break;
-                }
-            }
-        }
-
-        return key;
     }
 }

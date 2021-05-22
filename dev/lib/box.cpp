@@ -421,7 +421,7 @@ namespace box
                 {
                     scrollThumbHeight = SCROLL_BOX_SCROLL_THUMB_MIN_HEIGHT;
                     // // (length where thumb can move within - height of thumb) / lines not rendered
-                    scrollThumbUnitDistanceTraversal = (scrollBarTrackHeight - scrollThumbHeight) / linesNotRendered;
+                    scrollThumbUnitDistanceTraversal = float(scrollBarTrackHeight - scrollThumbHeight) / linesNotRendered;
                 }
             }
             else
@@ -431,7 +431,7 @@ namespace box
         reRenderScrollbar();
     }
 
-    bool BoxWithScrollBar::scroll(lib::Direction scrollDirection, int noOfLines = 1)
+    bool BoxWithScrollBar::scroll(lib::Direction scrollDirection, int noOfLines)
     {
         if (!hasScrollBar)
             return false;
