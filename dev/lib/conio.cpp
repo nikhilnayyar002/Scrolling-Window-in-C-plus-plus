@@ -25,18 +25,8 @@ namespace winConio
     const short LIGHT_YELLOW = 14;
     const short BRIGHT_WHITE = 15;
 
-    struct ConsoleDimentions
-    {
-        int rows;
-        int cols;
-    };
-
     // get the standard (default handle when program runs) console buffer handle
     HANDLE getStdHandle();
-
-    // sets the console window to fullscreen windowed mode
-    // alternative functionality :  https://docs.microsoft.com/en-us/windows/console/setconsoledisplaymode
-    void setFullScreen();
 
     // clear the screen
     // https://www.cplusplus.com/articles/4z18T05o/
@@ -65,8 +55,69 @@ namespace winConio
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
     int setConsoleActiveScreenBuffer(HANDLE hOut);
 
-    // get the dimensions of console window given a ConsoleScreenBuffer
-    ConsoleDimentions getConsoleDimentions(HANDLE hOut);
+    // console functions
+    //
+    // console has two major properties: ConsoleScreenBuffer, Window Size, Display Coordinates
+    //
+    // 1. getConsoleScreenBufferSize returns the number of columns and rows in console.
+    //    Example:
+    //    when a console is rendered it has some no of cols say 120 (120 visible) and rows 9001 (30 visible).
+    //    Such large number of rows makes cmd scrollbar visible and user can scroll vertically.
+    //    One can change this number in cmd properties or set it programitically.
+    // 2. getConsoleWindowSize returns the number of rows and columns visible in console.
+    //    Example:
+    //    when a console is rendered it has visible no of cols say 120 and rows 30. 30 may not be actual number of rows but visible rows.
+    // 3. getLargestConsoleWindowSize returns the max number of rows and columns that can be visible in full screened console.
+    //    Example:
+    //    when a console is rendered in fullscreen it returned 240 cols and 63 rows.
+    // 4. getConsoleScreenDisplayCoordinates returns the inner coordinates of console.
+    //    Example:
+    //    when a console is rendered it has coorinates Left 0, Top 0 -> Right 119, Bottom 29
+    //
+    // Console intially rendered:
+    //
+    // Left 0
+    // Top 0
+    // Bottom 29
+    // Right 119
+    // ConsoleScreenBufferSize cols 120
+    // ConsoleScreenBufferSize rows 9001
+    // ConsoleWindowSize cols 120
+    // ConsoleWindowSize rows 30
+    // LargestConsoleWindowSize cols 240
+    // LargestConsoleWindowSize rows 63
+    //
+    // Console rendered in full screen:
+    //
+    // Left 0
+    // Top 0
+    // Bottom 62
+    // Right 236
+    // ConsoleScreenBufferSize cols 237
+    // ConsoleScreenBufferSize rows 9001
+    // ConsoleWindowSize cols 237
+    // ConsoleWindowSize rows 63
+    // LargestConsoleWindowSize cols 240
+    // LargestConsoleWindowSize rows 63
+    //
+    // Console rendered in full screen with rows = max-displayed-rows (The vertical scrollbar will be removed)
+    //
+    // Left 0
+    // Top 0
+    // Bottom 62
+    // Right 239
+    // ConsoleScreenBufferSize cols 240
+    // ConsoleScreenBufferSize rows 9001
+    // ConsoleWindowSize cols 240
+    // ConsoleWindowSize rows 63
+    // LargestConsoleWindowSize cols 240
+    // LargestConsoleWindowSize rows 63
+
+    COORD getConsoleScreenBufferSize(HANDLE hOut);
+    COORD getConsoleWindowSize(HANDLE hOut);
+    COORD getLargestConsoleWindowSize(HANDLE hOut);
+    SMALL_RECT getConsoleScreenDisplayCoordinates(HANDLE hOut);
+    void setFullScreen(HANDLE hOut);
 
     void displayCursor(bool state, HANDLE hOut);
 
@@ -77,6 +128,8 @@ namespace winConio
     // https://docs.microsoft.com/en-us/windows/console/reading-and-writing-blocks-of-characters-and-attributes
     class ConsoleTextCapture
     {
+        HANDLE hOut;
+
     private:
         CHAR_INFO *chiBuffer;
 
@@ -88,11 +141,11 @@ namespace winConio
         void setSrcRecAndBufSize(SHORT x1, SHORT y1, SHORT x2, SHORT y2);
 
     public:
-        ConsoleTextCapture(ConsoleDimentions cd);
+        ConsoleTextCapture(HANDLE hOut);
         ~ConsoleTextCapture();
 
-        bool getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut);
-        bool putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut);
+        bool getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2);
+        bool putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2);
     };
 }
 
@@ -113,8 +166,59 @@ namespace winConio
         return hStdOut;
     }
 
-    void setFullScreen()
+    COORD getConsoleScreenBufferSize(HANDLE hOut)
     {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        return csbi.dwSize;
+    }
+
+    COORD getConsoleWindowSize(HANDLE hOut)
+    {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        COORD temp;
+        temp.X = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        temp.Y = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
+        return temp;
+    }
+
+    COORD getLargestConsoleWindowSize(HANDLE hOut)
+    {
+        return GetLargestConsoleWindowSize(hOut);
+    }
+
+    SMALL_RECT getConsoleScreenDisplayCoordinates(HANDLE hOut)
+    {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        GetConsoleScreenBufferInfo(hOut, &csbi);
+
+        return csbi.srWindow;
+    }
+
+    void setFullScreen(HANDLE hOut = nullptr)
+    {
+        // if hOut present then buffersize is equal to windowSize
+        // basically set number of rows equal to max displayed rows
+        // this code also sets console to fullscreen but fails to move to top-left corner of screen.
+        if (hOut)
+        {
+            COORD maxSize = getLargestConsoleWindowSize(hOut);
+            SMALL_RECT rect;
+            rect.Left = rect.Top = 0;
+            rect.Bottom = maxSize.Y - 1;
+            rect.Right = maxSize.X - 1;
+
+            // this will update the buffer size
+            SetConsoleScreenBufferSize(hOut, maxSize);
+            // this will update the coordinates. Note the rect should correspond to the buffer size. Other wise it will not work
+            SetConsoleWindowInfo(hOut, true, &rect);
+        }
+
+        // maximize the window. In case above code is called then its purpose is merely to move to top-left postion of screen
         ShowWindow(GetConsoleWindow(), SW_MAXIMIZE);
     }
 
@@ -238,9 +342,13 @@ namespace winConio
         return _getch();
     }
 
-    ConsoleTextCapture::ConsoleTextCapture(ConsoleDimentions cd)
+    ConsoleTextCapture::ConsoleTextCapture(HANDLE hOut)
     {
-        chiBuffer = new CHAR_INFO[cd.rows * cd.cols];
+        ConsoleTextCapture::hOut = hOut;
+
+        COORD cd = getLargestConsoleWindowSize(hOut);
+
+        chiBuffer = new CHAR_INFO[cd.X * cd.Y];
 
         // The top left destination cell of the temporary buffer is
         // row 0, col 0.
@@ -269,7 +377,7 @@ namespace winConio
         coordBufSize.X = x2 - x1 + 1;
     }
 
-    bool ConsoleTextCapture::getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut)
+    bool ConsoleTextCapture::getText(SHORT x1, SHORT y1, SHORT x2, SHORT y2)
     {
         setSrcRecAndBufSize(x1, y1, x2, y2);
 
@@ -288,7 +396,7 @@ namespace winConio
         return true;
     }
 
-    bool ConsoleTextCapture::putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2, HANDLE hOut)
+    bool ConsoleTextCapture::putText(SHORT x1, SHORT y1, SHORT x2, SHORT y2)
     {
         setSrcRecAndBufSize(x1, y1, x2, y2);
 
@@ -305,18 +413,6 @@ namespace winConio
             return false;
         }
         return true;
-    }
-
-    ConsoleDimentions getConsoleDimentions(HANDLE hOut)
-    {
-        CONSOLE_SCREEN_BUFFER_INFO csbi;
-        ConsoleDimentions temp;
-
-        GetConsoleScreenBufferInfo(hOut, &csbi);
-        temp.cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-        temp.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-
-        return temp;
     }
 
     void displayCursor(bool state, HANDLE hOut)

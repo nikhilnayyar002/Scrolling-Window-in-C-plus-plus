@@ -111,7 +111,7 @@ int main()
 	winConio::setFullScreen();
 
 	HANDLE hStdOut = winConio::getStdHandle();
-	setGlobals(hStdOut, winConio::getConsoleDimentions(hStdOut));
+	setGlobals(hStdOut, winConio::getConsoleSize(hStdOut));
 
 	sw = new Swselec(6, 17, 3, 29, "Main Menu"); //y1,y2,x1,x2,title
 	mw = new Swmain(6, 17, 35, 77, "Console");

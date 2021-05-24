@@ -295,7 +295,7 @@ int main(void)
    winConio::setFullScreen();
 
    HANDLE hStdOut = winConio::getStdHandle();
-   setGlobals(hStdOut, winConio::getConsoleDimentions(hStdOut));
+   setGlobals(hStdOut, winConio::getConsoleSize(hStdOut));
 
    /*
       Create 3 windows and return pointers to these windows

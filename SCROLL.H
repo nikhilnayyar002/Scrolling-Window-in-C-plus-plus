@@ -10,9 +10,9 @@
 #define MAX_BUFFER_SIZE 1000
 
 HANDLE hStdOut;
-winConio::ConsoleDimentions maxConsoleDimens;
+winConio::ConsoleSize maxConsoleDimens;
 
-void setGlobals(HANDLE hStdOut, winConio::ConsoleDimentions maxConsoleDimens)
+void setGlobals(HANDLE hStdOut, winConio::ConsoleSize maxConsoleDimens)
 {
 	::hStdOut = hStdOut;
 	::maxConsoleDimens = maxConsoleDimens;

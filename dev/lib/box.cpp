@@ -98,6 +98,8 @@ namespace box
         std::string renderedTitle;
         short actualOffsetLengthBeforeRenderedTitle;
 
+        winConio::ConsoleTextCapture consoleRecCapture;
+
         // initialize box data members
 
         void setDimension(short x1, short y1, short x2, short y2);
@@ -111,6 +113,7 @@ namespace box
 
     public:
         Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        ~Box();
 
         void resetContent(); // clears the content inside the box
 
@@ -160,7 +163,7 @@ namespace box
 namespace box
 {
     Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title)
+        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title), consoleRecCapture(hOut)
     {
         // if (!(backgroundColor >= 0 && backgroundColor < winConio::TOTAL_COLORS))
         //     throw std::runtime_error("Box::backgroundColor is not valid.");
@@ -172,10 +175,19 @@ namespace box
         if (!(x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1))
             throw std::runtime_error("Box dimensions are not correct. Make sure x1 >= 0 && y1 >= 0 && x2 > x1 && y2 > y1.");
 
+        // capture the console output area before rendering the box in that area
+        consoleRecCapture.getText(x1, y1, x2, y2);
+
         setDimension(x1, y1, x2, y2);
         setRenderedTitle();
         renderBorders(borderTxtColor, borderBgColor);
         resetContent();
+    }
+
+    Box::~Box()
+    {
+        // restore the console output area
+        consoleRecCapture.putText(x1, y1, x2, y2);
     }
 
     // initialize box data members ********************************************************************
