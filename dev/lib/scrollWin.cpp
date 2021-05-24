@@ -112,7 +112,7 @@ namespace scrollWin
     public:
         SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
-        void addOptions(std::vector<SwSelecOption> &swSelecOptions);
+        void addOptions(std::vector<SwSelecOption> swSelecOptions);
 
         // virtual functions
 
@@ -354,7 +354,7 @@ namespace scrollWin
         SwBase::clear();
     }
 
-    void SwSelec::addOptions(std::vector<SwSelecOption> &swSelecOptions)
+    void SwSelec::addOptions(std::vector<SwSelecOption> swSelecOptions)
     {
         if (swSelecOptions.size())
         {

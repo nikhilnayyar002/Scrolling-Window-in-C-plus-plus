@@ -4,11 +4,9 @@
 
 using namespace std;
 
-void callMe(int optionNo)
-{
-    winConio::gotoxy(30, 36, winConio::getStdHandle());
-    cout << optionNo << " Selected !!!!!!!!!!!!!!!";
-}
+scrollWin::SwMain *console = nullptr;
+
+void onOptionSelected(int optionNo);
 
 int main()
 {
@@ -17,44 +15,73 @@ int main()
     winConio::clearScreen(hStdOut);
     winConio::setFullScreen();
     winConio::displayCursor(false, hStdOut);
-    // winConio::ConsoleDimentions consoleDimens= winConio::getConsoleDimentions(hStdOut);
+    winConio::ConsoleDimentions consoleDimens = winConio::getConsoleDimentions(hStdOut);
 
-    scrollWin::SwMain sWMain1(0, 0, 15, 15, "Console", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwSelec menu(1, 0, consoleDimens.cols / 4 - 1, consoleDimens.rows / 4, "Menu", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwMain console(consoleDimens.cols / 4 + 1, 0, consoleDimens.cols - consoleDimens.cols / 2, consoleDimens.rows / 4, "Console", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
 
-    sWMain1.out << "Hi:" << '\n';
-    sWMain1.out << "This:" << '\n';
-    sWMain1.out << "\n66666";
-    sWMain1.end();
-    sWMain1.out << "Hi:" << '\n';
-    sWMain1.out << "This:" << '\n';
-    sWMain1.out << "this output breaks to next line since it overflowed.";
-    sWMain1.out << "\n6666666666666666999999999999999";
-    sWMain1.out << scrollWin::filterTextOutput1(sWMain1.getInnerHorSize(), "Address", "D/90/B, Janak Puri, New Delhi, Delhi, 110059").first;
-    sWMain1.end();
+    menu.addOptions({
+        {"Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option Option Option Option Option Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option Option Option Option Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option", onOptionSelected},
+        {"Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option Option Option Option Option Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option", onOptionSelected},
+        {"Option Option Option Option Option Option Option Option", onOptionSelected},
+    });
 
-    scrollWin::SwSelec swSelec(0 + 25, 20, 15 + 25, 20 + 15, "Window2", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
-    vector<scrollWin::SwSelecOption> options = {
-        {"Option Option Option Option", nullptr},
-        {"Option Option Option Option Option Option Option Option Option Option Option Option", callMe},
-        {"Option Option Option Option", nullptr},
-        {"Option Option Option Option Option Option Option Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option", nullptr},
-        {"Option Option Option Option", nullptr},
-        {"Option Option Option Option Option Option Option Option Option Option Option Option", nullptr},
-        {"Option Option Option Option", nullptr},
-        {"Option Option Option Option Option Option Option Option", nullptr},
-    };
-    swSelec.addOptions(options);
+    console.out << "Hi:" << '\n';
+    console.out << "This:" << '\n';
+    console.out << "\n66666";
+    console.end();
 
-    sWMain1.setNextActiveWindow(swSelec);
-    swSelec.setNextActiveWindow(sWMain1);
-    scrollWin::windowsRecipe1(swSelec);
+    console.out << "Hi:" << '\n';
+    console.out << "This:" << '\n';
+    console.out << "this output breaks to next line since it overflowed.";
+    console.out << "\n6666666666666666999999999999999";
+    console.out << "\n"
+                << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Address", "D/90/B, Janak Puri, AMT Tower, C96 Green Park, New Delhi, Delhi, 110059").first
+                << "\n";
+    console.out << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Some text", "text text text text text text text text text text text text text text text text text text").first
+                << "\n";
+    console.end();
+
+    // make console globally acessible
+    ::console = &console;
+
+    // connect windows in circular fashion
+    console.setNextActiveWindow(menu);
+    menu.setNextActiveWindow(console);
+
+    // set a window active and allowing switching b/w them. On special occasions like ESC key pressed, return out of this function.
+    scrollWin::windowsRecipe1(menu);
 
     return 0;
+}
+
+void onOptionSelected(int optionNo)
+{
+    static bool isConsoleResetDone = false;
+
+    if (console)
+    {
+        // reset console
+        if (!isConsoleResetDone)
+        {
+            console->clear();
+            isConsoleResetDone = true;
+        }
+
+        // do output
+        console->out << optionNo << " Selected !\n";
+        console->end();
+    }
 }
