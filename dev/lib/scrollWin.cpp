@@ -58,6 +58,9 @@ namespace scrollWin
 
         // set the window as active
         virtual int setActive() = 0;
+
+        // rest the output of window: reset scroll and content only.
+        virtual void clear();
     };
 
     class SwMain : public SwBase
@@ -77,6 +80,7 @@ namespace scrollWin
 
         void end();
         int setActive();
+        void clear();
     };
 
     struct SwSelecOption
@@ -114,6 +118,7 @@ namespace scrollWin
 
         void end();
         int setActive();
+        void clear();
     };
 
     // this recipe when called allows switching between windows using tab key. Also if escape is pressed in a window it will break
@@ -153,6 +158,13 @@ namespace scrollWin
         : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
     {
         nextActiveWindow = nullptr;
+    }
+
+    void SwBase::clear()
+    {
+        box.resetContent();
+        box.resetLines(0);
+        lines.clear();
     }
 
     void SwBase::_end(std::string str)
@@ -257,10 +269,15 @@ namespace scrollWin
     {
     }
 
+    void SwMain::clear()
+    {
+        out.str("");
+        SwBase::clear();
+    }
+
     void SwMain::end()
     {
         const std::string str = out.str();
-        // reset the buffer with set overload of ostringstream::str
         out.str("");
 
         _end(str);
@@ -327,6 +344,14 @@ namespace scrollWin
     {
         selectedOptionColor = SWSELEC_DEFAULT_SELECTED_OPTION_COLOR;
         selectedOptionIndex = -1;
+    }
+
+    void SwSelec::clear()
+    {
+        selectedOptionIndex = -1;
+        options.clear();
+
+        SwBase::clear();
     }
 
     void SwSelec::addOptions(std::vector<SwSelecOption> &swSelecOptions)

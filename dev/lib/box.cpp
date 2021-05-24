@@ -108,10 +108,11 @@ namespace box
         virtual void renderVerBorder(lib::Position pc);
         virtual void renderHorBorder(lib::Chars bc);
         void renderBorders(int borderTxtColor, int borderBgColor);
-        void resetOutput(); // clears the content inside the box
 
     public:
         Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+
+        void resetContent(); // clears the content inside the box
 
         void setFocus(bool state);
         bool hasFocus() { return _hasFocus; }
@@ -138,11 +139,11 @@ namespace box
 
         void renderVerBorder(lib::Position pc);
         void reRenderScrollbar();
-        void reset(int noOfLines);
 
     public:
         BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
+        void resetLines(int noOfLines);
         bool scroll(lib::Direction scrollDirection, int noOfLines);
         void setNoOfLines(int n);
 
@@ -174,7 +175,7 @@ namespace box
         setDimension(x1, y1, x2, y2);
         setRenderedTitle();
         renderBorders(borderTxtColor, borderBgColor);
-        resetOutput();
+        resetContent();
     }
 
     // initialize box data members ********************************************************************
@@ -271,7 +272,7 @@ namespace box
             actualOffsetLengthBeforeRenderedTitle = BOX_OFFSET_LENGTH_BEFORE_RENDERED_TITLE;
     }
 
-    void Box::resetOutput()
+    void Box::resetContent()
     {
         winConio::paintBackground(innerTopLeftCoord.X, innerTopLeftCoord.Y, innerBottomRightCoord.X, innerBottomRightCoord.Y, backgroundColor, hOut);
     }
@@ -339,10 +340,10 @@ namespace box
     {
         scrollBarTrackHeight = innerVerSize - 2 * SCROLL_BOX_SCROLL_BUTTON_HEIGHT; // the space for scroll Button Top and Bottom should be subtracted
 
-        reset(0);
+        resetLines(0);
     }
 
-    void BoxWithScrollBar::reset(int noOfLines)
+    void BoxWithScrollBar::resetLines(int noOfLines)
     {
         // scrollbar
 
@@ -425,7 +426,7 @@ namespace box
                 }
             }
             else
-                reset(n);
+                resetLines(n);
         }
 
         reRenderScrollbar();
