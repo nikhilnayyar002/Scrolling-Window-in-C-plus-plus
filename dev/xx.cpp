@@ -58,11 +58,12 @@ int main()
 
     // make console globally acessible
     ::console = &console;
+    // set current menu
     currentMenu = &menu;
 
     // connect windows in circular fashion
-    console.setNextActiveWindow(menu);
-    menu.setNextActiveWindow(console);
+    console.setNextActiveWindow((scrollWin::SwBase **)&currentMenu);
+    menu.setNextActiveWindow((scrollWin::SwBase **)&::console);
 
     // set a window active and allowing switching b/w them. On special occasions like ESC key pressed, return out of this function.
     scrollWin::windowsRecipe1(menu);
@@ -95,8 +96,6 @@ void onOptionSelected(int optionNo)
 
 void subMenu()
 {
-    scrollWin::SwSelec *previousActiveMenu = currentMenu;
-
     scrollWin::SwSelec menu(1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu 2", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
 
     menu.addOptions({
@@ -117,12 +116,14 @@ void subMenu()
         {"Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
     });
 
+    // store address of previously active menu
+    scrollWin::SwSelec *previousActiveMenu = currentMenu;
+    // set new current menue
     currentMenu = &menu;
-    menu.setNextActiveWindow(*console);
-    console->setNextActiveWindow(menu);
-
+    // set current menu next window
+    menu.setNextActiveWindow((scrollWin::SwBase **)&console);
+    // set current menu active and allow switching between windows
     scrollWin::windowsRecipe1(menu);
-
+    // when current menu becomes inactive set currentMenu value back to previous menu.
     currentMenu = previousActiveMenu;
-    console->setNextActiveWindow(*currentMenu);
 }

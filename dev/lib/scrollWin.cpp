@@ -20,8 +20,27 @@ namespace scrollWin
 
         std::vector<std::string> lines;
 
-        // the next window that can be made active after making current window inactive
-        SwBase *nextActiveWindow;
+        // the address of pointer that is storing the address of next window that can be made active after making current window inactive
+        // why double pointer? because that pointer may have different value and knowing the address of that pointer we can get its current value in real time.
+        // For example:
+        //
+        // Address of Window 1 : 12345
+        // Address of Pointer: 00001
+        // Address stored by Pointer: 12345
+        // Address stored by double Pointer: 00001
+        // :. Address of current window (*pointer): 12345
+        //
+        // Now lets the pointer value is changed.
+        //
+        // Now Address of Window 2 : 44444
+        // Address of Pointer: 00001
+        // Address stored by Pointer: 44444
+        // Address stored by double Pointer: 00001
+        // :. Address of current window (*pointer): 44444
+        //
+        // So one can see the the value is reflected in double pointer when it gets changed in original pointer.
+        //
+        SwBase **nextActiveWindow;
 
         // common code that will be called within setActive member function
         // will return 0:
@@ -45,8 +64,8 @@ namespace scrollWin
 
         //
 
-        void setNextActiveWindow(SwBase &ref) { nextActiveWindow = &ref; }
-        SwBase *getNextActiveWindow() { return nextActiveWindow; }
+        void setNextActiveWindow(SwBase **p) { nextActiveWindow = p; }
+        SwBase *getNextActiveWindow() { return nextActiveWindow ? *nextActiveWindow : nullptr; }
 
         // return box parameters
 
