@@ -68,15 +68,19 @@ namespace lib
         return tokens;
     }
 
+    // Divides a line into smaller lines of fixed width
+    // Word Break Rule: break-all (https://developer.mozilla.org/en-US/docs/Web/CSS/word-break)
+    //
     // example:
     //
-    // string = 0123456789
-    // part length = 4
-    // no of parts =  10/4 = 2.5 = 3
-    // parts:
-    //      0123 pos=0
-    //      4567 pos=4
-    //      89   pos=8 (last part)
+    //  string = 0123456789
+    //  part length = 4
+    //  no of parts =  10/4 = 2.5 = 3
+    //  parts:
+    //       0123 pos=0
+    //       4567 pos=4
+    //       89   pos=8 (last part)
+    //
     std::vector<std::string> strToEqualSizeParts(std::string str, unsigned int partLength)
     {
         std::vector<std::string> parts;

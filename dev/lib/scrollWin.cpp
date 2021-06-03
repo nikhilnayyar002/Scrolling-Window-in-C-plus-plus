@@ -40,7 +40,7 @@ namespace scrollWin
         //
         // So one can see the the value is reflected in double pointer when it gets changed in original pointer.
         //
-        SwBase **nextActiveWindow;
+        SwBase **nextActiveWindow = nullptr;
 
         // common code that will be called within setActive member function
         // will return 0:
@@ -84,14 +84,33 @@ namespace scrollWin
 
     class SwMain : public SwBase
     {
+        // output stream object
+        std::ostringstream out;
+
         // virtual functions
 
         void scroll(lib::Direction scrollDirection);
         void renderContent();
 
     public:
-        // output stream object
-        std::ostringstream out;
+        //output stream functions
+        SwMain &operator<<(char val) { out << val; return *this; }
+        SwMain &operator<<(unsigned char val) { out << val; return *this; }
+        SwMain &operator<<(signed char val) { out << val; return *this; }
+        SwMain &operator<<(short val) { out << val; return *this; }
+        SwMain &operator<<(unsigned short val) { out << val; return *this; }
+        SwMain &operator<<(int val) { out << val; return *this; }
+        SwMain &operator<<(unsigned int val) { out << val; return *this; }
+        SwMain &operator<<(float val) { out << val; return *this; }
+        SwMain &operator<<(double val) { out << val; return *this; }
+        SwMain &operator<<(long double val) { out << val; return *this; }
+        SwMain &operator<<(long val) { out << val; return *this; }
+        SwMain &operator<<(unsigned long val) { out << val; return *this; }
+        SwMain &operator<<(long long val) { out << val; return *this; }
+        SwMain &operator<<(unsigned long long val) { out << val; return *this; }
+        SwMain &operator<<(char *val) { out << val; return *this; }
+        SwMain &operator<<(const char *val) { out << val; return *this; }
+        SwMain &operator<<(std::string val) { out << val; return *this; }
 
         SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
 
@@ -120,8 +139,8 @@ namespace scrollWin
         Option selectedOption;
         std::vector<Option> options;
 
-        short selectedOptionIndex;
-        short selectedOptionColor;
+        short selectedOptionIndex = -1;
+        short selectedOptionColor = SWSELEC_DEFAULT_SELECTED_OPTION_COLOR;
 
         // virtual functions
 
@@ -176,7 +195,6 @@ namespace scrollWin
     SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
     {
-        nextActiveWindow = nullptr;
     }
 
     void SwBase::clear()
@@ -361,8 +379,6 @@ namespace scrollWin
     SwSelec::SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
         : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
     {
-        selectedOptionColor = SWSELEC_DEFAULT_SELECTED_OPTION_COLOR;
-        selectedOptionIndex = -1;
     }
 
     void SwSelec::clear()

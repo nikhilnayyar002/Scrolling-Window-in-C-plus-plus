@@ -40,20 +40,20 @@ int main()
         {"Option Option Option Option Option Option Option Option", onOptionSelected},
     });
 
-    console.out << "Hi:" << '\n';
-    console.out << "This:" << '\n';
-    console.out << "\n66666";
+    console << "Hi:" << '\n';
+    console << "This:" << '\n';
+    console << "\n66666";
     console.end();
 
-    console.out << "Hi:" << '\n';
-    console.out << "This:" << '\n';
-    console.out << "this output breaks to next line since it overflowed.";
-    console.out << "\n6666666666666666999999999999999";
-    console.out << "\n"
-                << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Address", "D/90/B, Janak Puri, AMT Tower, C96 Green Park, New Delhi, Delhi, 110059").first
-                << "\n";
-    console.out << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Some text", "text text text text text text text text text text text text text text text text text text").first
-                << "\n";
+    console << "Hi:" << '\n';
+    console << "This:" << '\n';
+    console << "this output breaks to next line since it overflowed.";
+    console << "\n6666666666666666999999999999999";
+    console << "\n"
+            << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Address", "D/90/B, Janak Puri, AMT Tower, C96 Green Park, New Delhi, Delhi, 110059").first
+            << "\n";
+    console << scrollWin::filterTextOutput1(console.getInnerHorSize(), "Some text", "text text text text text text text text text text text text text text text text text text").first
+            << "\n";
     console.end();
 
     // make console globally acessible
@@ -77,16 +77,18 @@ void onOptionSelected(int optionNo)
 
     if (console)
     {
+        scrollWin::SwMain &console = *::console;
+
         // reset console
         if (!isConsoleResetDone)
         {
-            console->clear();
+            console.clear();
             isConsoleResetDone = true;
         }
 
         // do output
-        console->out << optionNo << " Selected !\n";
-        console->end();
+        console << optionNo << " Selected !\n";
+        console.end();
 
         //if optionNo 2 selected
         if (optionNo == 2)
@@ -96,7 +98,7 @@ void onOptionSelected(int optionNo)
 
 void subMenu()
 {
-    scrollWin::SwSelec menu(1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu 2", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwSelec menu(1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu >> More Choices", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
 
     menu.addOptions({
         {"Menu 2 Menu 2 Menu 2 Menu 2", nullptr},

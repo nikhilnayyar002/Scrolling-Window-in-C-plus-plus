@@ -130,12 +130,15 @@ namespace winConio
     {
         HANDLE hOut;
 
-    private:
         CHAR_INFO *chiBuffer;
 
         SMALL_RECT srcRect;
         COORD coordBufSize;
-        COORD coordBufCoord;
+
+        // The top left destination cell of the temporary buffer is
+        // row 0, col 0.
+        COORD coordBufCoord = {0, 0};
+
         BOOL fSuccess;
 
         void setSrcRecAndBufSize(SHORT x1, SHORT y1, SHORT x2, SHORT y2);
@@ -349,12 +352,6 @@ namespace winConio
         COORD cd = getLargestConsoleWindowSize(hOut);
 
         chiBuffer = new CHAR_INFO[cd.X * cd.Y];
-
-        // The top left destination cell of the temporary buffer is
-        // row 0, col 0.
-
-        coordBufCoord.X = 0;
-        coordBufCoord.Y = 0;
     }
 
     ConsoleTextCapture::~ConsoleTextCapture()
