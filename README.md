@@ -7,6 +7,9 @@
 Must watch video first for good insight:
 [Video Preview](https://youtu.be/AKy5GKpfbKc)
 
+![image](https://user-images.githubusercontent.com/38173563/120925271-72c91500-c6f5-11eb-95c8-3f2eb8b2281e.png)
+
+
 ## Introduction
 
 While creating console programs sometimes one may want to create visuals (colorful, interactive UI) similar to UI programs we are daily used to. These UI programs are generally window like (border, scrollbar, title), some allow users to select from given options (select menu), some allow to scroll through contents (notepad) etc. This project serves that purpose. It provides simple api to create window inside console that can output, scroll through contents, accept input, switch between multiple windows, allow selection of options using selection window. Besides this the project contains api similar to what conio.h provided in the past.
