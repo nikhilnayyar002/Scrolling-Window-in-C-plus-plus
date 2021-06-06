@@ -62,8 +62,11 @@ namespace box
     class Box
     {
     protected:
-        // hold the console buffer screen instance, where box should be rendered
-        HANDLE hOut;
+        // hold the console input and output buffer handles,
+        // the output buffer where box should be rendered
+        // the input buffer where the input is processed
+        // generally these handles point to STD_OUTPUT_HANDLE & STD_INPUT_HANDLE
+        HANDLE hOut, hIn;
 
         // original title of the box
         std::string title;
@@ -112,7 +115,7 @@ namespace box
         void renderBorders(int borderTxtColor, int borderBgColor);
 
     public:
-        Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn);
         ~Box();
 
         void resetContent(); // clears the content inside the box
@@ -144,7 +147,7 @@ namespace box
         void reRenderScrollbar();
 
     public:
-        BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn);
 
         void resetLines(int noOfLines);
         bool scroll(lib::Direction scrollDirection, int noOfLines);
@@ -162,8 +165,8 @@ namespace box
 
 namespace box
 {
-    Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : _hasFocus(false), hOut(hOut), backgroundColor(backgroundColor), textColor(textColor), title(title), consoleRecCapture(hOut)
+    Box::Box(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn)
+        : _hasFocus(false), hOut(hOut), hIn(hIn), backgroundColor(backgroundColor), textColor(textColor), title(title), consoleRecCapture(hOut)
     {
         // if (!(backgroundColor >= 0 && backgroundColor < winConio::TOTAL_COLORS))
         //     throw std::runtime_error("Box::backgroundColor is not valid.");
@@ -347,8 +350,8 @@ namespace box
             renderBorders(borderTxtColor, borderBgColor);
     }
 
-    BoxWithScrollBar::BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : Box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    BoxWithScrollBar::BoxWithScrollBar(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn)
+        : Box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut, hIn)
     {
         scrollBarTrackHeight = innerVerSize - 2 * SCROLL_BOX_SCROLL_BUTTON_HEIGHT; // the space for scroll Button Top and Bottom should be subtracted
 

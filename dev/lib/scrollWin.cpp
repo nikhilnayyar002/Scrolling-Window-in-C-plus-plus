@@ -6,6 +6,12 @@
 #include "box.cpp"
 #include "lib.cpp"
 
+#define MACRO_scrollWin_SwMain_commonOutput \
+    {                                       \
+        outStream << val;                   \
+        return *this;                       \
+    }
+
 namespace scrollWin
 {
     const short SWSELEC_DEFAULT_SELECTED_OPTION_COLOR = winConio::RED;
@@ -42,13 +48,7 @@ namespace scrollWin
         //
         SwBase **nextActiveWindow = nullptr;
 
-        // common code that will be called within setActive member function
-        // will return 0:
-        //  1. if it cannot do anything related to pressed key
-        //  2. it did something related to pressed key for internal changes (scroll contents etc)
-        //
-        // will return non-zero value if key pressed has some special meaning like ESC, TAB and requires external logic (switch windows etc)
-        //
+        // a non-zero value will be returned if this function wants it caller to do something with the returned value
         int setActiveCommon(int pressedKey);
 
         // add the content of string into lines.
@@ -59,12 +59,16 @@ namespace scrollWin
         // render the contents inside the box
         virtual void renderContent() = 0;
 
+        virtual void scrollToBottom() = 0;
+
     public:
-        SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn);
 
         //
 
-        void setNextActiveWindow(SwBase **p) { nextActiveWindow = p; }
+        template <typename T>
+        void setNextActiveWindow(T **p) { nextActiveWindow = (SwBase **)p; }
+
         SwBase *getNextActiveWindow() { return nextActiveWindow ? *nextActiveWindow : nullptr; }
 
         // return box parameters
@@ -85,34 +89,38 @@ namespace scrollWin
     class SwMain : public SwBase
     {
         // output stream object
-        std::ostringstream out;
+        std::ostringstream outStream;
+
+        // input stream object
+        std::istringstream inStream;
 
         // virtual functions
 
         void scroll(lib::Direction scrollDirection);
         void renderContent();
+        void scrollToBottom();
 
     public:
-        //output stream functions
-        SwMain &operator<<(char val) { out << val; return *this; }
-        SwMain &operator<<(unsigned char val) { out << val; return *this; }
-        SwMain &operator<<(signed char val) { out << val; return *this; }
-        SwMain &operator<<(short val) { out << val; return *this; }
-        SwMain &operator<<(unsigned short val) { out << val; return *this; }
-        SwMain &operator<<(int val) { out << val; return *this; }
-        SwMain &operator<<(unsigned int val) { out << val; return *this; }
-        SwMain &operator<<(float val) { out << val; return *this; }
-        SwMain &operator<<(double val) { out << val; return *this; }
-        SwMain &operator<<(long double val) { out << val; return *this; }
-        SwMain &operator<<(long val) { out << val; return *this; }
-        SwMain &operator<<(unsigned long val) { out << val; return *this; }
-        SwMain &operator<<(long long val) { out << val; return *this; }
-        SwMain &operator<<(unsigned long long val) { out << val; return *this; }
-        SwMain &operator<<(char *val) { out << val; return *this; }
-        SwMain &operator<<(const char *val) { out << val; return *this; }
-        SwMain &operator<<(std::string val) { out << val; return *this; }
+        SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn);
 
-        SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        //output stream functions
+        SwMain &operator<<(char val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(unsigned char val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(signed char val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(short val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(unsigned short val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(int val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(unsigned int val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(float val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(double val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(long double val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(long val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(unsigned long val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(long long val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(unsigned long long val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(char *val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(const char *val) MACRO_scrollWin_SwMain_commonOutput;
+        SwMain &operator<<(std::string val) MACRO_scrollWin_SwMain_commonOutput;
 
         // virtual functions
 
@@ -146,9 +154,10 @@ namespace scrollWin
 
         void scroll(lib::Direction scrollDirection);
         void renderContent();
+        void scrollToBottom(){};
 
     public:
-        SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut);
+        SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn);
 
         void addOptions(std::vector<SwSelecOption> swSelecOptions);
 
@@ -159,6 +168,8 @@ namespace scrollWin
         void clear();
     };
 
+    // managed by function windowsRecipe1: stores the currently active window pointer
+    SwBase *wr1_activeWindow = nullptr;
     // this recipe when called allows switching between windows using tab key. Also if escape is pressed in a window it will break
     // out of while loop and give back control to the caller function (the one who called it)
     // pass the a window to set it as active initially.
@@ -192,8 +203,8 @@ namespace scrollWin
 
 namespace scrollWin
 {
-    SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    SwBase::SwBase(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn)
+        : box(x1, y1, x2, y2, title, backgroundColor, textColor, hOut, hIn)
     {
     }
 
@@ -288,34 +299,47 @@ namespace scrollWin
                 scroll(lib::Direction::dirUp);
             else if (pressedKey == SPECIAL_ARROW_DOWN)
                 scroll(lib::Direction::dirDown);
-
-            return 0;
         }
-        // return pressed key
         else if (pressedKey == lib::Chars::escape || pressedKey == lib::Chars::horizontalTab)
         {
             box.setFocus(false);
+
             return pressedKey;
         }
-        else
-            return 0;
+
+        return 0;
     }
 
-    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut), out(std::ostringstream::ate)
+    SwMain::SwMain(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut, hIn), outStream(std::ostringstream::ate)
     {
+        // set end of file flag
+        inStream.setstate(std::ios::iostate::_S_eofbit);
+    }
+
+    void SwMain::scrollToBottom()
+    {
+        if (!box.hasScrollBar)
+            return;
+
+        int linesToScroll = lines.size() - (box.topLineIndex + box.innerVerSizePadded);
+        if (linesToScroll)
+        {
+            box.scroll(lib::Direction::dirDown, linesToScroll);
+            renderContent();
+        }
     }
 
     void SwMain::clear()
     {
-        out.str("");
+        outStream.str("");
         SwBase::clear();
     }
 
     void SwMain::end()
     {
-        const std::string str = out.str();
-        out.str("");
+        const std::string str = outStream.str();
+        outStream.str("");
 
         _end(str);
 
@@ -376,8 +400,8 @@ namespace scrollWin
             renderContent();
     };
 
-    SwSelec::SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut)
-        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut)
+    SwSelec::SwSelec(short x1, short y1, short x2, short y2, std::string title, short backgroundColor, short textColor, HANDLE hOut, HANDLE hIn)
+        : SwBase(x1, y1, x2, y2, title, backgroundColor, textColor, hOut, hIn)
     {
     }
 
@@ -582,22 +606,26 @@ namespace scrollWin
 
     void windowsRecipe1(SwBase &initialActiveWindow)
     {
-        SwBase *activeWindow = &initialActiveWindow;
+        SwBase *prevActiveWindow = wr1_activeWindow;
+
+        wr1_activeWindow = &initialActiveWindow;
 
         while (true)
         {
-            int p = activeWindow->setActive();
+            int p = wr1_activeWindow->setActive();
 
             // if horizontal tab is pressed switch to next active window
             if (p == lib::Chars::horizontalTab)
             {
-                scrollWin::SwBase *nextActiveWindow = activeWindow->getNextActiveWindow();
+                scrollWin::SwBase *nextActiveWindow = wr1_activeWindow->getNextActiveWindow();
                 if (nextActiveWindow)
-                    activeWindow = nextActiveWindow;
+                    wr1_activeWindow = nextActiveWindow;
             }
             // if escape is pressed then break out
             else if (p == lib::Chars::escape)
                 break;
         }
+
+        wr1_activeWindow = prevActiveWindow;
     }
 }

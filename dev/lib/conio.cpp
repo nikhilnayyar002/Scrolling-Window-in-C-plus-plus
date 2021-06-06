@@ -25,8 +25,16 @@ namespace winConio
     const short LIGHT_YELLOW = 14;
     const short BRIGHT_WHITE = 15;
 
-    // get the standard (default handle when program runs) console buffer handle
-    HANDLE getStdHandle();
+    // get the handle to standard console output buffer
+    HANDLE getStdOutputHandle();
+
+    // get the handle to standard console input buffer
+    HANDLE getStdInputHandle();
+
+    // flush the provided console input buffer.
+    // For example solves: http://www.cplusplus.com/forum/beginner/49068/
+    // https://docs.microsoft.com/en-us/windows/console/flushconsoleinputbuffer
+    bool flushConsoleInputBuffer(HANDLE hIn);
 
     // clear the screen
     // https://www.cplusplus.com/articles/4z18T05o/
@@ -156,17 +164,38 @@ namespace winConio
 
 namespace winConio
 {
-    HANDLE getStdHandle()
+    HANDLE getStdOutputHandle()
     {
         const HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
         if (hStdOut == INVALID_HANDLE_VALUE)
         {
-            lib::nameFailedWithCode("getStdHandle", GetLastError());
-            throw std::runtime_error("getStdHandle failed");
+            lib::nameFailedWithCode("getStdOutputHandle", GetLastError());
+            throw std::runtime_error("getStdOutputHandle failed");
         }
 
         return hStdOut;
+    }
+
+    HANDLE getStdInputHandle()
+    {
+        const HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+        if (hStdIn == INVALID_HANDLE_VALUE)
+        {
+            lib::nameFailedWithCode("getStdInputHandle", GetLastError());
+            throw std::runtime_error("getStdInputHandle failed");
+        }
+
+        return hStdIn;
+    }
+
+    bool flushConsoleInputBuffer(HANDLE hIn)
+    {
+        if (FlushConsoleInputBuffer(hIn))
+            return true;
+
+        return false;
     }
 
     COORD getConsoleScreenBufferSize(HANDLE hOut)

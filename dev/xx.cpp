@@ -4,7 +4,7 @@
 
 using namespace std;
 
-HANDLE hStdOut;
+HANDLE hStdOut, hStdIn;
 COORD consoleDimens;
 scrollWin::SwMain *console = nullptr;
 scrollWin::SwSelec *currentMenu = nullptr;
@@ -14,31 +14,43 @@ void subMenu();
 
 int main()
 {
-    hStdOut = winConio::getStdHandle();
+    hStdOut = winConio::getStdOutputHandle();
+    hStdIn = winConio::getStdInputHandle();
     winConio::setFullScreen(hStdOut);
     winConio::displayCursor(false, hStdOut);
     consoleDimens = winConio::getConsoleWindowSize(hStdOut);
 
-    scrollWin::SwSelec menu(1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
-    scrollWin::SwMain console(consoleDimens.X / 4 + 1, 0, consoleDimens.X - consoleDimens.X / 2, consoleDimens.Y / 4, "Console", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwSelec menu(
+        1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut, hStdIn);
+    scrollWin::SwMain console(
+        consoleDimens.X / 4 + 1, 0, consoleDimens.X - consoleDimens.X / 2, consoleDimens.Y / 4, "Console", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut, hStdIn);
 
-    menu.addOptions({
-        {"Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option Option Option Option Option Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option Option Option Option Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option", onOptionSelected},
-        {"Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option Option Option Option Option Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option", onOptionSelected},
-        {"Option Option Option Option Option Option Option Option", onOptionSelected},
-    });
+    menu.addOptions({{"Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu", onOptionSelected},
+                     {"Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu Menu \
+Menu Menu Menu Menu Menu Menu",
+                      onOptionSelected},
+                     {"Menu Menu Menu Menu", onOptionSelected}});
 
     console << "Hi:" << '\n';
     console << "This:" << '\n';
@@ -59,11 +71,11 @@ int main()
     // make console globally acessible
     ::console = &console;
     // set current menu
-    currentMenu = &menu;
+    ::currentMenu = &menu;
 
     // connect windows in circular fashion
-    console.setNextActiveWindow((scrollWin::SwBase **)&currentMenu);
-    menu.setNextActiveWindow((scrollWin::SwBase **)&::console);
+    console.setNextActiveWindow(&::currentMenu);
+    menu.setNextActiveWindow(&::console);
 
     // set a window active and allowing switching b/w them. On special occasions like ESC key pressed, return out of this function.
     scrollWin::windowsRecipe1(menu);
@@ -75,7 +87,7 @@ void onOptionSelected(int optionNo)
 {
     static bool isConsoleResetDone = false;
 
-    if (console)
+    if (::console)
     {
         scrollWin::SwMain &console = *::console;
 
@@ -98,34 +110,35 @@ void onOptionSelected(int optionNo)
 
 void subMenu()
 {
-    scrollWin::SwSelec menu(1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu >> More Choices", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut);
+    scrollWin::SwSelec subMenu(
+        1, 0, consoleDimens.X / 4 - 1, consoleDimens.Y / 4, "Menu >> More Choices", winConio::BLUE, winConio::BRIGHT_WHITE, hStdOut, hStdIn);
 
-    menu.addOptions({
-        {"Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
-        {"Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2 Menu 2", nullptr},
+    subMenu.addOptions({
+        {"SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu", nullptr},
+        {"SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu SubMenu", nullptr},
     });
 
     // store address of previously active menu
-    scrollWin::SwSelec *previousActiveMenu = currentMenu;
+    scrollWin::SwSelec *previousActiveMenu = ::currentMenu;
     // set new current menue
-    currentMenu = &menu;
-    // set current menu next window
-    menu.setNextActiveWindow((scrollWin::SwBase **)&console);
-    // set current menu active and allow switching between windows
-    scrollWin::windowsRecipe1(menu);
+    ::currentMenu = &subMenu;
+    // set subMenu next window
+    subMenu.setNextActiveWindow(&::console);
+    // set sub menu active and allow switching between windows
+    scrollWin::windowsRecipe1(subMenu);
     // when current menu becomes inactive set currentMenu value back to previous menu.
-    currentMenu = previousActiveMenu;
+    ::currentMenu = previousActiveMenu;
 }
