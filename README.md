@@ -23,6 +23,7 @@ While creating console programs sometimes one may want to create visuals (colorf
 - [x] Support for Switching between multiple Windows.
 - [ ] Console input support for Main Window.
 - [ ] Console input validation support for Main Window.
+- [x] Custom filters for formatting text for rendering inside window.
 
 ## Working demo
 Read the [sample](./sample.cpp) file for details.
