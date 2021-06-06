@@ -48,6 +48,7 @@ Read the [sample](./sample.cpp) file for details.
   * Presents menu items for selection using enter key and trigger callbacks.
 
 ## Support
+As of know the the classic console apis are supported by microsoft.
 
 > ### Note from Microsoft regarding current console apis support
 > This document describes console platform functionality that is no longer a part of our [ecosystem roadmap](https://docs.microsoft.com/en-us/windows/console/ecosystem-roadmap). We do not recommend using this content in new products, but we will continue to support existing usages for the indefinite future. Our preferred modern solution focuses on [virtual terminal sequences](https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences) for maximum compatibility in cross-platform scenarios. You can find more information about this design decision in our [classic console vs. virtual terminal](https://docs.microsoft.com/en-us/windows/console/classic-vs-vt) document.
