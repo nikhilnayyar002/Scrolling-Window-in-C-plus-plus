@@ -15,11 +15,11 @@ While creating console programs sometimes one may want to create visuals (colorf
 
 ## Features
 
-[x] Output support for Windows.
-[x] Scrolling support for Windows.
-[x] Support for Switching between multiple Windows.
-[ ] Console input support for Main Window.
-[ ] Console input validation support for Main Window.
+- [x] Output support for Windows.
+- [x] Scrolling support for Windows.
+- [x] Support for Switching between multiple Windows.
+- [ ] Console input support for Main Window.
+- [ ] Console input validation support for Main Window.
 
 ## Working demo
 Read the [sample](./sample.cpp) file for details.
