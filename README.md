@@ -1,69 +1,53 @@
 <h1>Scrolling-Window-in-C++</h1>
 
 [![Generic badge](https://img.shields.io/badge/OS-Windows-blue.svg)](https://shields.io/)
-[![Generic badge](https://img.shields.io/badge/C++-Stable-green.svg)](https://shields.io/)
 [![Generic badge](https://img.shields.io/badge/Mingw-gcc-green.svg)](https://shields.io/)
 \
 \
 Must watch video first for good insight:
 [Video Preview](https://youtu.be/AKy5GKpfbKc)
-\
-For future support of C++ Current Standard read markdown file 
-[C++_CUR_STD_SUPPORT.md](./C++_CUR_STD_SUPPORT.md)
 
-[Summary](https://nikhilnayyar.web.app/projects#scrolling-window)
+## Introduction
 
-<h2>Introduction</h2>
+While creating console programs sometimes one may want to create visuals (colorful, interactive UI) similar to UI programs we are daily used to. These UI programs are generally window like (border, scrollbar, title), some allow users to select from given options (select menu), some allow to scroll through contents (notepad) etc. This project serves that purpose. It provides simple api to create window inside console that can output, scroll through contents, accept input, switch between multiple windows, allow selection of options using selection window. Besides this the project contains api similar to what conio.h provided in the past.
 
-In short there is a header file you can include in your program such as Database Management Program to have clear look and clean code. You just have to include SCROLL.H in your program as:
+> You can create as many windows inside console that can fill up the console nicely!
 
-<pre>
-#include "scroll.h"
-</pre>
+## Features
 
-It includes a two classes : 
-<ul>
-<li>scrolling input/output Window</li>
-<li>scrolling selection Menu Window</li>
-</ul>
+[x] Output support for Windows.
+[x] Scrolling support for Windows.
+[x] Support for Switching between multiple Windows.
+[ ] Console input support for Main Window.
+[ ] Console input validation support for Main Window.
 
-<h2>Why i developed this file?</h2>
+## Working demo
+Read the [sample](./sample.cpp) file for details.
 
-This is a tweak something i wanted when i was in 12th standard when i was creating a Library Database Project in C++ using <b>Turbo C++ v 3.0</b>. I wanted to present the database program in good manner.
+## Prerequisites
 
-<h2>How easily i could use it?</h2>
+* Must know about Pointers concept.
+* Must be aware of windows working architecture (for this project) described in file [PROJECT_CONCEPT.md](./PROJECT_CONCEPT.md)
+* Setup compiler environment https://code.visualstudio.com/docs/cpp/config-mingw
 
-Just go through sample1.cpp follow the instructions.
+## Scrolling Windows
 
-<h2>Prerequisites</h2>
+* Common
+  * saves information that render in this window so that you can scroll and look back. (Similar to notepad in windows)
+  * if overflow occurs wrap words.
+  * Scrollbars will pop up when necessary.
+  * Active window has higlightered borders.
+  * Switching between windows using Tab Key is supported.
 
-Must have good knowledge of following c++ features along with oops:
-<ul>
-<li>Pointers</li>
-</ul>
-<h2>Scrolling input/output Window</h2>
+* SwMain
+  * do output similar using `<< operator` similar to `std::cout`.
+  * do input similar using `>> operator` similar to `std::cin`. Also provided is `getLine` function for strings.
+  * Input field like support is there for input. :. Long text bigger than window horizontal size can be input.
 
-<ol type="1">
-<li>saves information that render in this window so that you can scroll and look back. (Similar to notepad in windows)</li>
-<li><b>do output</b> using object similar to iostream <b>cout</b> object</li>
-<li><b>does not support</b> input similar to iostream <b>cin</b> object</li>
-<li>if overflow occurs words <b>wrap up at the end of line </b></li>
-<li> a special filter is included: <b>':'</b> and <b> '[]'</b>. Will explain in example.</li>
+* SwSelec
+  * Presents menu items for selection using enter key and trigger callbacks.
 
-<li>Input data similar to GUI textbox you see. You can  supply <b>fixed width input, automatic or an input with     validity check</b> along with msgs to pop up if incorrect input (then reinput correctly).</li>
-<li>Scrollbars will pop up when necessary</li>
-<li>Tab Switching support so that you can switch between multiple Scrolling input/output Windows or scrolling selection Menu Windows. You get an orange colored bordered layout whenever one window is active.</li>
-</ol>
+## Support
 
-<h3>What you can customize?</h3>
-Generally you don't need to customize anything. The visual effects are all fine. If you really need to change background colors or text color you can customize the scroll.h file. I have actually hard coded values.
-
-<h2>Scrolling selection Menu Windows</h2>
-
-Offers item selection control where each item is bounded to a function which it triggers on selection through enter key or keycode (I will explain you in example). It shares some features of Scrolling input/output Window.
-
-<h2></h2>
-
-<h2>Support</h2>
-
-You can study the Sample programs. For support contact nikhilnayyar002@gmail.com by giving me a msg with subject 'ScrollingWindow'. I will help you out.
+> ### Note from Microsoft regarding current console apis support
+> This document describes console platform functionality that is no longer a part of our [ecosystem roadmap](https://docs.microsoft.com/en-us/windows/console/ecosystem-roadmap). We do not recommend using this content in new products, but we will continue to support existing usages for the indefinite future. Our preferred modern solution focuses on [virtual terminal sequences](https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences) for maximum compatibility in cross-platform scenarios. You can find more information about this design decision in our [classic console vs. virtual terminal](https://docs.microsoft.com/en-us/windows/console/classic-vs-vt) document.

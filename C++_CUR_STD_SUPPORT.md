@@ -1,28 +1,9 @@
 # Support for C++ Current Standard 
 
-[![Generic badge](https://img.shields.io/badge/C++11-GREEN.svg)](https://shields.io/)
-[![Generic badge](https://img.shields.io/badge/C++14-GREEN.svg)](https://shields.io/)
-[![Generic badge](https://img.shields.io/badge/C++17-GREEN.svg)](https://shields.io/)
+[![Generic badge](https://img.shields.io/badge/C++-Current_Standard-GREEN.svg)](https://shields.io/)
 \
 \
-The master branch currently support C++ stable windows code. The issues with current branch is that it dont handles modern c++ code very well and is just suppoerting outdated/depreciated codes and libraries. These are:
-
-* <strstream.h>
-* C style code
-
-* We need to replace ``` <strstream.h> ``` by ``` <sstream> ``` i.e and use ``` istringstream, ostringstream, stringstream``` as neccessary.
-	http://www.cplusplus.com/reference/sstream/ostringstream/ostringstream/
-
-## ```dev``` Folder
-
-This contains work for modern c++. Implementations are for windows os only. This has done pretty much replacment for ```conio.h``` .
-* get console rows and cols
-* set full screen windowed console
-* clearscreen
-* paint background
-* text capturing
-* creating box
-* hiding cursor
+The master branch currently support latest standard code for Windows.
 
 ## Extra
 
