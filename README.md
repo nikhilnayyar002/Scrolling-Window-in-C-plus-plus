@@ -24,6 +24,7 @@ While creating console programs sometimes one may want to create visuals (colorf
 - [ ] Console input support for Main Window.
 - [ ] Console input validation support for Main Window.
 - [x] Custom filters for formatting text for rendering inside window.
+- [ ] Responsive Design
 
 ## Working demo
 Read the [sample](./sample.cpp) file for details.
